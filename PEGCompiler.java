@@ -5,6 +5,8 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.List;
 
+import peg.VMCodeGenerator;
+
 public class PEGCompiler {
     // ファイルからデータを読み取って、仮想マシンコードを返す。
     public static void main(String[] args) {
@@ -19,7 +21,7 @@ public class PEGCompiler {
 
         try {
             List<String> peg_grammers = Files.readAllLines(peg_filepath, StandardCharsets.UTF_8);
-            String vmcode = VMCodeGenarator.generate(peg_grammers);
+            String vmcode = VMCodeGenerator.generate(peg_grammers);
         } catch (IOException e) {
             System.out.println(e.toString());
             return;

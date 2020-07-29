@@ -1,13 +1,9 @@
 package peg;
 
+import java.util.HashMap;
+
 public abstract class ASTree {
-    protected Modifire modifire;
+    protected static HashMap<String, Integer> NTaddressMap;
 
-    public ASTree(Modifire modifire) {
-        this.modifire = modifire;
-    }
-
-    public abstract void printTree();
-
-    public abstract void eval(VMCodeGeneratorResult result);
+    public abstract String eval();
 }

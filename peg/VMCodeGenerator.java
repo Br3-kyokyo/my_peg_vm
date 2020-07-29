@@ -14,13 +14,11 @@ public class VMCodeGenerator {
 
     private static Lexer lexer;
 
-    private static VMCodeGeneratorResult result;
-
     // インスタンスの作成を禁止: staticクラス
     private VMCodeGenerator() {
     };
 
-    public static String generate(List<String> pegGrammers) throws Exception {
+    public static String generate(List<String> pegGrammers) throws ParseException {
 
         ASTree tree = grammerList(pegGrammers);
         String vmcode = tree.eval();
@@ -87,41 +85,46 @@ public class VMCodeGenerator {
 
     private static ASTree ParsingExpression() throws ParseException {
         Token t;
-        Modifire modifire = Modifire.none;
         ASTree ParsingExpressionBody;
+        Modifire modifire = Modifire.none;
 
         t = lexer.peek();
         if (t instanceof ModifireToken)
             modifire = PREFIX();
 
-        t = lexer.peek();
-        if (t instanceof LparenToken) {
-            lexer.read();
-            ParsingExpressionBody = ParsingExpressionOr();
-            lexer.read();
-        } else if (t instanceof DQuotationToken) {
-            ParsingExpressionBody = String();
-        } else if (t instanceof SQuotationToken) {
-            ParsingExpressionBody = Char();
-        } else if (t instanceof LbracketToken) {
-            ParsingExpressionBody = Bracket();
-        } else if (t instanceof NTNameToken) {
-            ParsingExpressionBody = NT();
-        } else if (t instanceof EmptyToken) {
-            ParsingExpressionBody = EMP();
-        } else if (t instanceof DotToken) {
-            ParsingExpressionBody = DOT();
-        } else {
-            ParsingExpressionBody = null;
-        }
+        ParsingExpressionBody = ParsingExpressionBody();
 
         t = lexer.peek();
         if (t instanceof ModifireToken)
             modifire = SUFFIX();
 
-        ParsingExpressionBody.modifire = modifire;
+        return new ParsingExpression(ParsingExpressionBody, modifire);
+    }
 
-        return ParsingExpressionBody;
+    private static ASTree ParsingExpressionBody() throws ParseException {
+        Token t;
+        ASTree parsingExpressionBody;
+        t = lexer.peek();
+        if (t instanceof LparenToken) {
+            lexer.read();
+            parsingExpressionBody = ParsingExpressionOr();
+            lexer.read();
+        } else if (t instanceof DQuotationToken) {
+            parsingExpressionBody = String();
+        } else if (t instanceof SQuotationToken) {
+            parsingExpressionBody = Char();
+        } else if (t instanceof LbracketToken) {
+            parsingExpressionBody = Bracket();
+        } else if (t instanceof NTNameToken) {
+            parsingExpressionBody = NT();
+        } else if (t instanceof EmptyToken) {
+            parsingExpressionBody = EMP();
+        } else if (t instanceof DotToken) {
+            parsingExpressionBody = DOT();
+        } else {
+            parsingExpressionBody = null;
+        }
+        return parsingExpressionBody;
     }
 
     private static Modifire SUFFIX() throws ParseException {

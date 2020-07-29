@@ -1,17 +1,13 @@
 package peg;
 
+import java.util.Arrays;
 import java.util.List;
 
 public abstract class ASTList extends ASTree {
     public List<ASTree> children;
 
     public ASTList(List<ASTree> children) {
-        super(Modifire.none);
-        this.children = children;
-    }
-
-    public ASTList(List<ASTree> children, Modifire modifire) {
-        super(modifire);
+        super();
         this.children = children;
     }
 
@@ -22,67 +18,20 @@ public abstract class ASTList extends ASTree {
 
 class GrammerList extends ASTList {
     public GrammerList(List<ASTree> children) {
-        super(children, Modifire.none);
-    }
-
-    @Override
-    public void printTree() {
-        // TODO Auto-generated method stub
-    }
-
-    @Override
-    public void eval(VMCodeGeneratorResult result) {
-        for (ASTree grammer : children)
-            grammer.eval(result);
+        super(children);
     }
 }
 
 class Grammer extends ASTList {
     public Grammer(List<ASTree> children) {
-        super(children, Modifire.none);
+        super(children);
     }
-
-    @Override
-    public void eval(VMCodeGeneratorResult result) {
-        leftterm().eval(result);
-        rightterm().eval(result);
-    }
-
-    private ASTree leftterm() {
-        return children.get(0);
-    }
-
-    private ASTree rightterm() {
-        return children.get(1);
-    }
-
-    @Override
-    public void printTree() {
-        // TODO Auto-generated method stub
-
-    }
-
 }
 
 class ParsingExpressionOr extends ASTList {
 
     public ParsingExpressionOr(List<ASTree> children) {
         super(children);
-    }
-
-    public ParsingExpressionOr(List<ASTree> children, Modifire modifire) {
-        super(children, modifire);
-    }
-
-    @Override
-    public void printTree() {
-        // TODO Auto-generated method stub
-    }
-
-    @Override
-    public void eval(VMCodeGeneratorResult result) {
-        // TODO Auto-generated method stub
-
     }
 }
 
@@ -91,8 +40,18 @@ class ParsingExpressionSequence extends ASTList {
     public ParsingExpressionSequence(List<ASTree> children) {
         super(children);
     }
+}
 
-    public ParsingExpressionSequence(List<ASTree> children, Modifire modifire) {
-        super(children, modifire);
+class ParsingExpression extends ASTList {
+
+    Modifire modifire;
+
+    public ParsingExpression(ASTree child, Modifire modifire) {
+        super(Arrays.asList(child));
+        this.modifire = modifire;
+    }
+
+    public ASTree getChild() {
+        return super.children.get(0);
     }
 }
