@@ -1,13 +1,8 @@
 package peg;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import peg.*;
 
 public class VMCodeGenerator {
     // PEG規則を仮想マシンコードに変換する。
@@ -18,25 +13,39 @@ public class VMCodeGenerator {
     private VMCodeGenerator() {
     };
 
-    public static String generate(List<String> pegGrammers) throws ParseException {
+    public static byte[] generate(List<String> pegGrammers) throws ParseException {
 
-        ASTree tree = grammerList(pegGrammers);
-        String vmcode = tree.eval();
+        // PEG構文木生成
+        List<Rule> rule_list = ruleList(pegGrammers);
 
-        return vmcode;
+        // 構文木から仮想マシンコードを生成
+        var oplist = new OpList();
+        for (Rule rule : rule_list) {
+            OpList.NTaddressMap.put(rule.getNt().name, oplist.size());
+            oplist.addOpblock(rule.getBody().eval());
+        }
+
+//        var vmcode = oplist.toArray();
+//        for (int i = 0; i < vmcode.length; i++)
+//        	System.out.print(String.format("%02X", vmcode[i]) + " ");
+//        System.out.println();
+
+        oplist = PiFunctions.ReplaceCallNtAddr(oplist);
+
+        return oplist.toArray();
     }
 
-    private static ASTree grammerList(List<String> pegGrammers) throws ParseException {
+    private static List<Rule> ruleList(List<String> pegGrammers) throws ParseException {
 
-        LinkedList<ASTree> grammers = new LinkedList<ASTree>();
+        LinkedList<Rule> grammers = new LinkedList<Rule>();
         for (String pegGrammer : pegGrammers) {
             lexer = new Lexer(pegGrammer);
-            grammers.add(grammer(pegGrammer));
+            grammers.add(rule(pegGrammer));
         }
-        return new GrammerList(grammers);
+        return grammers;
     }
 
-    private static ASTree grammer(String pegGrammer) throws ParseException {
+    private static Rule rule(String pegGrammer) throws ParseException {
 
         var leftterm = lexer.read();
         var leftarrow = lexer.read();
@@ -44,43 +53,32 @@ public class VMCodeGenerator {
         if (!(leftterm instanceof NTNameToken || leftarrow instanceof LeftArrowToken))
             throw new ParseException();
 
-        var lefttermstmnt = new GrammerLeftTermStmnt(leftterm.toString());
-        var rightterm = ParsingExpressionOr();
+        var nt = new RuleNT(leftterm.toString());
+        var rulebody = ParsingExpressionOr();
 
-        return new Grammer(Arrays.asList(lefttermstmnt, rightterm));
-
-        // Matcher m = Pattern.compile("(.+)<-(.+)").matcher(pegGrammer);
-
-        // if (m.matches()) {
-        // String left_term = m.group(1);
-        // String right_term = m.group(2);
-
-        // NTaddressMap.put(left_term, vmcode_sb.length());
-
-        // ParsingExpressionOr();
-
-        // }
-
+        return new Rule(nt, rulebody);
     }
 
     private static ASTree ParsingExpressionOr() throws ParseException {
 
-        LinkedList<ASTree> list = new LinkedList<ASTree>();
-        list.add(ParsingExpressionSeq());
+        var left = ParsingExpressionSeq();
         if (lexer.peek() instanceof SlashToken) {
             lexer.read();
-            list.add(ParsingExpressionOr());
+            var right = ParsingExpressionOr();
+            return new ParsingExpressionOr(Arrays.asList(left, right));
+        } else {
+            return left;
         }
-        return new ParsingExpressionOr(list);
     }
 
     private static ASTree ParsingExpressionSeq() throws ParseException {
-        LinkedList<ASTree> list = new LinkedList<ASTree>();
-        list.add(ParsingExpression());
+        var left = ParsingExpression();
         Token next = lexer.peek();
-        if (!(next instanceof SlashToken || next instanceof EOLToken))
-            list.add(ParsingExpression());
-        return new ParsingExpressionSequence(list);
+        if (!(next instanceof SlashToken || next instanceof EOLToken)) {
+            var right = ParsingExpressionSeq();
+            return new ParsingExpressionSequence(Arrays.asList(left, right));
+        }
+        return left;
     }
 
     private static ASTree ParsingExpression() throws ParseException {
@@ -109,9 +107,9 @@ public class VMCodeGenerator {
             lexer.read();
             parsingExpressionBody = ParsingExpressionOr();
             lexer.read();
-        } else if (t instanceof DQuotationToken) {
+        } else if (t instanceof StringToken) {
             parsingExpressionBody = String();
-        } else if (t instanceof SQuotationToken) {
+        } else if (t instanceof CharToken) {
             parsingExpressionBody = Char();
         } else if (t instanceof LbracketToken) {
             parsingExpressionBody = Bracket();
@@ -129,14 +127,14 @@ public class VMCodeGenerator {
 
     private static Modifire SUFFIX() throws ParseException {
         ModifireToken mt = (ModifireToken) lexer.read();
-        if (mt.modifire != Modifire.plus || mt.modifire != Modifire.asterisk || mt.modifire != Modifire.question)
-            throw new ParseException("サフィックスは&か!です。");
+        if (mt.modifire != Modifire.plus && mt.modifire != Modifire.asterisk && mt.modifire != Modifire.question)
+            throw new ParseException("サフィックスは+か*か?です。");
         return mt.modifire;
     }
 
     private static Modifire PREFIX() throws ParseException {
         ModifireToken mt = (ModifireToken) lexer.read();
-        if (mt.modifire != Modifire.amplifire || mt.modifire != Modifire.exclamation)
+        if (mt.modifire != Modifire.amplifire && mt.modifire != Modifire.exclamation)
             throw new ParseException("プレフィックスは&か!です。");
         return mt.modifire;
     }
@@ -164,34 +162,17 @@ public class VMCodeGenerator {
             char end = lexer.read().toString().charAt(0);
             list.add(new Tuple<Character, Character>(start, end));
         }
+        lexer.read(); // rbracket
         return new BracketStmnt(list);
     }
 
     private static ASTree Char() {
-        lexer.read();
-        return new CharStmnt(lexer.read().toString().charAt(0));
+        char c = lexer.read().toString().charAt(0);
+        return new CharStmnt(c);
     }
 
     private static ASTree String() {
-        lexer.read();
         ASTree tree = new StringStmnt(lexer.read().toString());
-        lexer.read();
         return tree;
     }
-
-    // private void grammer_(String peg_grammer) {
-    // Matcher m = Pattern.compile("(.+)<-(.+)").matcher(peg_grammer);
-
-    // if (m.matches()) {
-    // String left_term = m.group(1);
-    // String right_term = m.group(2);
-
-    // NTaddressMap.put(left_term, vmcode_sb.length());
-
-    // } else {
-    // System.out.println("error: " + peg_grammer);
-    // }
-
-    // }
-
 }

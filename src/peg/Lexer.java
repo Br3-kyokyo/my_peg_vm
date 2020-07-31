@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 public class Lexer {
 
-    private String exp = "(<-)|(\\'[a-zA-Z]\\')|([a-zA-Z]+)|(\\\"[a-zA-z]+\\\")|(ε)|(\\p{Punct})";
+    String exp = "(<-)|\\'(\\\\\\'|[^\\'])\\'|\\\"((?:\\\\\\\"|[^\\\"])*)\\\"|([a-zA-Z]+)|(ε)|(\\p{Punct})|([0-9]+)";
     private Matcher matcher;
 
     private Queue<Token> tokens = new ArrayDeque<Token>();
@@ -21,13 +21,15 @@ public class Lexer {
             } else if (matcher.group(2) != null) {
                 tokens.add(new CharToken(matcher.group(2).charAt(0)));
             } else if (matcher.group(3) != null) {
-                tokens.add(new NTNameToken(matcher.group(3)));
+                tokens.add(new StringToken(matcher.group(3)));
             } else if (matcher.group(4) != null) {
-                tokens.add(new StringToken(matcher.group(4)));
+                tokens.add(new NTNameToken(matcher.group(4)));
             } else if (matcher.group(5) != null) {
                 tokens.add(new EmptyToken());
             } else if (matcher.group(6) != null) {
                 tokens.add(punctToken());
+            } else if (matcher.group(7) != null) {
+                tokens.add(new NumToken(Integer.parseInt(matcher.group(7))));
             } else {
                 throw new ParseException("呼ばれるはずのない分岐");
             }

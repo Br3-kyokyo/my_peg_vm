@@ -13,7 +13,7 @@ public class PEGCompiler {
 
         Path peg_filepath;
         try {
-            peg_filepath = Path.of(args[1]);
+            peg_filepath = Path.of(args[0]);
         } catch (InvalidPathException e) {
             System.out.println(e.toString());
             return;
@@ -21,12 +21,16 @@ public class PEGCompiler {
 
         try {
             List<String> peg_grammers = Files.readAllLines(peg_filepath, StandardCharsets.UTF_8);
-            String vmcode = VMCodeGenerator.generate(peg_grammers);
+            byte[] vmcode = VMCodeGenerator.generate(peg_grammers);
+
+            for (int i = 0; i < vmcode.length; i++)
+                System.out.print(String.format("%02X", vmcode[i]) + " ");
+
         } catch (IOException e) {
-            System.out.println(e.toString());
+            e.printStackTrace();
             return;
         } catch (Exception e) {
-            System.out.println(e.toString());
+            e.printStackTrace();
             return;
         }
     }

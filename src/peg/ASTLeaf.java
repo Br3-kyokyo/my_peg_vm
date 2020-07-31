@@ -1,6 +1,6 @@
 package peg;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class ASTLeaf extends ASTree {
@@ -15,6 +15,11 @@ class StringStmnt extends ASTLeaf {
         this.value = value;
     }
 
+    @Override
+    public OpList eval() {
+        return PiFunctions.String(value);
+    }
+
 }
 
 class CharStmnt extends ASTLeaf {
@@ -23,6 +28,11 @@ class CharStmnt extends ASTLeaf {
     public CharStmnt(final char value) {
         super();
         this.value = value;
+    }
+
+    @Override
+    public OpList eval() {
+        return PiFunctions.Char(value);
     }
 
 }
@@ -44,15 +54,16 @@ class BracketStmnt extends ASTLeaf {
         sb.append("]");
         return sb.toString();
     }
-}
 
-class GrammerLeftTermStmnt extends ASTLeaf {
+    @Override
+    public OpList eval() throws RuntimeException {
 
-    String name;
+        var charlist = new ArrayList<Character>();
+        for (var tuple : body)
+            for (char c = tuple.first; c <= tuple.second; c++)
+                charlist.add(c);
 
-    public GrammerLeftTermStmnt(final String name) {
-        super();
-        this.name = name;
+        return PiFunctions.Range(charlist);
     }
 }
 
@@ -63,6 +74,11 @@ class NonTerminationStmnt extends ASTLeaf {
         super();
         this.name = name;
     }
+
+    @Override
+    public OpList eval() {
+        return PiFunctions.NT(name);
+    }
 }
 
 class EmptyStmnt extends ASTLeaf {
@@ -70,10 +86,20 @@ class EmptyStmnt extends ASTLeaf {
     public EmptyStmnt() {
         super();
     }
+
+    @Override
+    public OpList eval() {
+        return new OpList(); // 空
+    }
 }
 
 class DotStmnt extends ASTLeaf {
     public DotStmnt() {
         super();
+    }
+
+    @Override
+    public OpList eval() {
+        return PiFunctions.Any();
     }
 }

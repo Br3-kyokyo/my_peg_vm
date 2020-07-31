@@ -1,5 +1,6 @@
 package peg;
 
+
 public class Token {
     private final String value;
 
