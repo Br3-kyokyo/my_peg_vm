@@ -23,3 +23,12 @@ A <- ’a’ A? ’b’
 B <- ’b’ B? ’c’
 
 \&|\(|\)|\[|\]\+|\*|\!|\?|\.|\-|[0-9]+|([a-zA-Z]+)|\"[a-zA-z]+\"
+
+POSTFIX <- ’(’ ’postfix’ NUM COMMAND* ’)’
+COMMAND <- NUM / ’(’ COMMAND+ ’)’
+NUM <- [0-9]+
+
+
+POSTFIX <- '(' "postfix" NUM COMMAND* ')'
+COMMAND <- NUM / '(' COMMAND+ ')'
+NUM <- [0-9]+

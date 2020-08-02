@@ -1,3 +1,7 @@
+*.peg
+*.bin
+*.lang
+
 /build/
 .classpath
 .project
