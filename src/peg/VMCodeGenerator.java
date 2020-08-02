@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import consts.OpCodes;
+
 public class VMCodeGenerator {
     // PEG規則を仮想マシンコードに変換する。
 
@@ -20,15 +22,19 @@ public class VMCodeGenerator {
 
         // 構文木から仮想マシンコードを生成
         var oplist = new OpList();
+        oplist.addOpcode(OpCodes.OPCODE_CALL);
+        oplist.addOperand(1);
+        oplist.addOpcode(OpCodes.OPCODE_END);
         for (Rule rule : rule_list) {
             OpList.NTaddressMap.put(rule.getNt().name, oplist.size());
             oplist.addOpblock(rule.getBody().eval());
+            oplist.addOpcode(OpCodes.OPCODE_RETURN);
         }
 
-//        var vmcode = oplist.toArray();
-//        for (int i = 0; i < vmcode.length; i++)
-//        	System.out.print(String.format("%02X", vmcode[i]) + " ");
-//        System.out.println();
+        // var vmcode = oplist.toArray();
+        // for (int i = 0; i < vmcode.length; i++)
+        // System.out.print(String.format("%02X", vmcode[i]) + " ");
+        // System.out.println();
 
         oplist = PiFunctions.ReplaceCallNtAddr(oplist);
 

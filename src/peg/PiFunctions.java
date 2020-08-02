@@ -1,6 +1,7 @@
 package peg;
 
 import java.util.List;
+import consts.OpCodes;
 
 public class PiFunctions {
 
@@ -11,7 +12,7 @@ public class PiFunctions {
         var list = new OpList();
 
         list.addOpcode(OpCodes.OPCODE_CHOICE);
-        list.addOperand(e1.size() + 5); //commit命令:5バイト
+        list.addOperand(e1.size() + 5); // commit命令:5バイト
         list.addOpblock(e1);
         list.addOpcode(OpCodes.OPCODE_COMMIT);
         list.addOperand(e2.size());
@@ -40,7 +41,7 @@ public class PiFunctions {
     public static OpList Char(char c) {
         var list = new OpList();
 
-        list.addOpcode(OpCodes.OPCODE_CAHR);
+        list.addOpcode(OpCodes.OPCODE_CHAR);
         list.addOperand(c);
 
         return list;
@@ -96,7 +97,7 @@ public class PiFunctions {
 
     }
 
-    public static OpList Repetation1(OpList e) {	
+    public static OpList Repetation1(OpList e) {
         var list = new OpList();
         list.addOpblock(e);
         list.addOpblock(Repetation0(e));

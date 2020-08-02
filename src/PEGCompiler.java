@@ -1,3 +1,4 @@
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -23,8 +24,12 @@ public class PEGCompiler {
             List<String> peg_grammers = Files.readAllLines(peg_filepath, StandardCharsets.UTF_8);
             byte[] vmcode = VMCodeGenerator.generate(peg_grammers);
 
-            for (int i = 0; i < vmcode.length; i++)
-                System.out.print(String.format("%02X", vmcode[i]) + " ");
+            FileOutputStream fos = new FileOutputStream("vmcode.bin");
+            fos.write(vmcode);
+            fos.close();
+
+            // for (int i = 0; i < vmcode.length; i++)
+            // System.out.print(String.format("%02X", vmcode[i]) + " ");
 
         } catch (IOException e) {
             e.printStackTrace();
