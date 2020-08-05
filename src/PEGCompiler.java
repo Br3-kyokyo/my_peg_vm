@@ -1,3 +1,6 @@
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -12,25 +15,9 @@ public class PEGCompiler {
     // ファイルからデータを読み取って、仮想マシンコードを返す。
     public static void main(String[] args) {
 
-        Path peg_filepath;
         try {
-            peg_filepath = Path.of(args[0]);
-        } catch (InvalidPathException e) {
-            System.out.println(e.toString());
-            return;
-        }
-
-        try {
-            List<String> peg_grammers = Files.readAllLines(peg_filepath, StandardCharsets.UTF_8);
-            byte[] vmcode = VMCodeGenerator.generate(peg_grammers);
-
-            FileOutputStream fos = new FileOutputStream("vmcode.bin");
-            fos.write(vmcode);
-            fos.close();
-
-            // for (int i = 0; i < vmcode.length; i++)
-            // System.out.print(String.format("%02X", vmcode[i]) + " ");
-
+            String input = readTextFromFileAll(args[0]);
+            byte[] vmcode = VMCodeGenerator.generate(input);
         } catch (IOException e) {
             e.printStackTrace();
             return;
@@ -38,5 +25,15 @@ public class PEGCompiler {
             e.printStackTrace();
             return;
         }
+    }
+
+    private static String readTextFromFileAll(String path) throws IOException {
+        File f = new File(path);
+        byte[] data = new byte[(int) f.length()];
+        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f));
+        bis.read(data);
+        bis.close();
+        String fs = new String(data, "utf-8");
+        return fs;
     }
 }
