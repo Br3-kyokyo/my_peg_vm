@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 public class Lexer {
 
-    String exp = "(<-)|\\'(\\\\\\'|[^\\'])\\'|\\\"((?:\\\\\\\"|[^\\\"])*)\\\"|([a-zA-Z]+)|(ε)|(\\p{Punct})|([0-9]+)";
+    String exp = "(<-)|\\'(\\\\\\'|[^\\']|\\\\x[0-f]{2})\\'|\\\"((?:\\\\\\\"|[^\\\"])*)\\\"|([a-zA-Z_][a-zA-Z_0-9]*)|(ε)|(\\p{Punct})|([0-9]+)";
     private Matcher matcher;
 
     private Queue<Token> tokens = new ArrayDeque<Token>();
@@ -19,7 +19,8 @@ public class Lexer {
             if (matcher.group(1) != null) {
                 tokens.add(new LeftArrowToken());
             } else if (matcher.group(2) != null) {
-                tokens.add(new CharToken(matcher.group(2).charAt(0)));
+
+                tokens.add(charToken());
             } else if (matcher.group(3) != null) {
                 tokens.add(new StringToken(matcher.group(3)));
             } else if (matcher.group(4) != null) {
@@ -35,6 +36,20 @@ public class Lexer {
             }
         }
         tokens.add(new EOLToken());
+    }
+
+    private Token charToken() {
+        String match = matcher.group(2);
+        char c;
+        if(match.charAt(0) == '\\'){
+            c = 
+        }else{
+            c = match.charAt(index)
+        }
+
+        if()
+
+        return new CharToken(.charAt(0));
     }
 
     public Token read() {

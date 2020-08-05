@@ -16,9 +16,9 @@ public abstract class ASTList extends ASTree {
     }
 }
 
-class ParsingExpressionOr extends ASTList {
+class ParsingExpressionChoiceStmnt extends ASTList {
 
-    public ParsingExpressionOr(List<ASTree> children) {
+    public ParsingExpressionChoiceStmnt(List<ASTree> children) {
         super(children);
     }
 
@@ -36,9 +36,9 @@ class ParsingExpressionOr extends ASTList {
     }
 }
 
-class ParsingExpressionSequence extends ASTList {
+class ParsingExpressionSeqStmnt extends ASTList {
 
-    public ParsingExpressionSequence(List<ASTree> children) {
+    public ParsingExpressionSeqStmnt(List<ASTree> children) {
         super(children);
     }
 

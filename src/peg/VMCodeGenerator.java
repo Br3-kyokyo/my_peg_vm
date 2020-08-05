@@ -18,6 +18,7 @@ public class VMCodeGenerator {
     public static byte[] generate(List<String> pegGrammers) throws ParseException {
 
         // PEG構文木生成
+        // ASTree grammer = Grammer(pegGrammers);
         List<Rule> rule_list = ruleList(pegGrammers);
 
         // 構文木から仮想マシンコードを生成
@@ -60,29 +61,39 @@ public class VMCodeGenerator {
             throw new ParseException();
 
         var nt = new RuleNT(leftterm.toString());
-        var rulebody = ParsingExpressionOr();
+        var rulebody = ParsingExpressionChoice();
 
         return new Rule(nt, rulebody);
     }
 
-    private static ASTree ParsingExpressionOr() throws ParseException {
+    private static ASTree ParsingExpressionChoice() throws ParseException {
 
         var left = ParsingExpressionSeq();
         if (lexer.peek() instanceof SlashToken) {
             lexer.read();
-            var right = ParsingExpressionOr();
-            return new ParsingExpressionOr(Arrays.asList(left, right));
+            var right = ParsingExpressionChoice();
+            return new ParsingExpressionChoiceStmnt(Arrays.asList(left, right));
         } else {
             return left;
         }
     }
 
+    // private static ASTree ParsingExpressionSeq() throws ParseException {
+    // //Seq <- PE*
+
+    // }
+
     private static ASTree ParsingExpressionSeq() throws ParseException {
-        var left = ParsingExpression();
+        // ## / / ( hoge fuga / hoge ) / () (fuge) /
         Token next = lexer.peek();
-        if (!(next instanceof SlashToken || next instanceof EOLToken)) {
+
+        if (next instanceof SlashToken || next instanceof RparenToken || next instanceof EOLToken)
+            return new EmptyStmnt();
+
+        var left = ParsingExpression();
+        if (!(next instanceof SlashToken || next instanceof RparenToken || next instanceof EOLToken)) {
             var right = ParsingExpressionSeq();
-            return new ParsingExpressionSequence(Arrays.asList(left, right));
+            return new ParsingExpressionSeqStmnt(Arrays.asList(left, right));
         }
         return left;
     }
@@ -111,7 +122,7 @@ public class VMCodeGenerator {
         t = lexer.peek();
         if (t instanceof LparenToken) {
             lexer.read();
-            parsingExpressionBody = ParsingExpressionOr();
+            parsingExpressionBody = ParsingExpressionChoice();
             lexer.read();
         } else if (t instanceof StringToken) {
             parsingExpressionBody = String();
