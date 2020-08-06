@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 
 public class Lexer {
 
-    String exp = "(<-)|\\'(\\\\\\'|[^\\']|\\\\x[0-f]{2})\\'|\\\"((?:\\\\\\\"|[^\\\"])*)\\\"|([a-zA-Z_][a-zA-Z_0-9]*)|(ε)|(\\p{Punct})|([0-9]+)";
+    String exp = "(<-)|(/)|(\\&)|(\\!)|(\\?)|(\\*)|(\\+)|(\\()|(\\))|(\\.)|(-)|(\\[)|(\\])|([a-zA-Z_]\\w*)|\\'(\\\\x[0-f]{2}|\\\\\\'|[^\\'])\\'|\\\"((?:\\\\x[0-f]{2}|\\\\\\'|[^\\\"])*)\\\"|(\\\\x[0-f]{2}|\\w)";
     private Matcher matcher;
 
     private Queue<Token> tokens = new ArrayDeque<Token>();
@@ -19,18 +19,37 @@ public class Lexer {
             if (matcher.group(1) != null) {
                 tokens.add(new LeftArrowToken());
             } else if (matcher.group(2) != null) {
-
-                tokens.add(charToken());
+                tokens.add(new SlashToken());
             } else if (matcher.group(3) != null) {
-                tokens.add(new StringToken(matcher.group(3)));
+                tokens.add(new ModifireToken(Modifire.amplifire));
             } else if (matcher.group(4) != null) {
-                tokens.add(new NTNameToken(matcher.group(4)));
+                tokens.add(new ModifireToken(Modifire.exclamation));
             } else if (matcher.group(5) != null) {
-                tokens.add(new EmptyToken());
+                tokens.add(new ModifireToken(Modifire.question));
             } else if (matcher.group(6) != null) {
-                tokens.add(punctToken());
+                tokens.add(new ModifireToken(Modifire.asterisk));
             } else if (matcher.group(7) != null) {
-                tokens.add(new NumToken(Integer.parseInt(matcher.group(7))));
+                tokens.add(new ModifireToken(Modifire.plus));
+            } else if (matcher.group(8) != null) {
+                tokens.add(new LparenToken());
+            } else if (matcher.group(9) != null) {
+                tokens.add(new RparenToken());
+            } else if (matcher.group(10) != null) {
+                tokens.add(new DotToken());
+            } else if (matcher.group(11) != null) {
+                tokens.add(new HyphenToken());
+            } else if (matcher.group(12) != null) {
+                tokens.add(new LbracketToken());
+            } else if (matcher.group(13) != null) {
+                tokens.add(new RbracketToken());
+            } else if (matcher.group(14) != null) {
+                tokens.add(new NTNameToken(matcher.group(14)));
+            } else if (matcher.group(15) != null) {
+                tokens.add(new CharToken(matcher.group(15).charAt(0)));
+            } else if (matcher.group(16) != null) {
+                tokens.add(new StringToken(matcher.group(16)));
+            } else if (matcher.group(17) != null) {
+                tokens.add(new CharToken(matcher.group(17).charAt(0)));
             } else {
                 throw new ParseException("呼ばれるはずのない分岐");
             }
