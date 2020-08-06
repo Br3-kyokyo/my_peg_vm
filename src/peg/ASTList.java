@@ -16,6 +16,34 @@ public abstract class ASTList extends ASTree {
     }
 }
 
+class GrammerStmnt extends ASTList {
+
+    public GrammerStmnt(List<ASTree> children) {
+        super(children);
+    }
+
+    @Override
+    public OpList eval() throws RuntimeException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+}
+
+class DifinitionStmnt extends ASTList {
+
+    public DifinitionStmnt(List<ASTree> children) {
+        super(children);
+    }
+
+    @Override
+    public OpList eval() throws RuntimeException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+}
+
 class ParsingExpressionChoiceStmnt extends ASTList {
 
     public ParsingExpressionChoiceStmnt(List<ASTree> children) {
