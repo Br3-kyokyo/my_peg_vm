@@ -3,11 +3,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
-import java.util.List;
 
 import peg.VMCodeGenerator;
 
@@ -18,6 +13,10 @@ public class PEGCompiler {
         try {
             String input = readTextFromFileAll(args[0]);
             byte[] vmcode = VMCodeGenerator.generate(input);
+
+            FileOutputStream fos = new FileOutputStream("vmcode.bin");
+            fos.write(vmcode);
+            fos.close();
         } catch (IOException e) {
             e.printStackTrace();
             return;

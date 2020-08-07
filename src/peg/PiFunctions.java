@@ -129,9 +129,10 @@ public class PiFunctions {
             // 仮で埋めていたバイト列を削除
             for (int i = 0; i < Integer.BYTES; i++)
                 oplist.remove(replaceTargetAddr);
-
+            
             // 当該アドレスを埋める
-            oplist.addOperand(replaceTargetAddr, OpList.NTaddressMap.get(nt) - (replaceTargetAddr + 4));
+            int offset = OpList.NTaddressMap.get(nt) - (replaceTargetAddr + 4);
+            oplist.addOperand(replaceTargetAddr, offset);
         }
 
         // 0 1 2 3 4 5 6 7

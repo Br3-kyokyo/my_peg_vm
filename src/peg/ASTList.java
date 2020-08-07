@@ -3,6 +3,8 @@ package peg;
 import java.util.Arrays;
 import java.util.List;
 
+import consts.OpCodes;
+
 public abstract class ASTList extends ASTree {
     private List<ASTree> children;
 
@@ -24,10 +26,18 @@ class GrammerStmnt extends ASTList {
 
     @Override
     public OpList eval() throws RuntimeException {
-        // TODO Auto-generated method stub
-        return null;
+        var oplist = new OpList();
+        oplist.addOpcode(OpCodes.OPCODE_CALL);
+        oplist.addOperand(1);
+        oplist.addOpcode(OpCodes.OPCODE_END);
+        for (ASTree tree : getChildren()) {
+            DifinitionStmnt dif = (DifinitionStmnt) tree;
+            OpList.NTaddressMap.put(dif.getIdentifire().name, oplist.size());
+            oplist.addOpblock(tree.eval());
+        }
+        oplist = PiFunctions.ReplaceCallNtAddr(oplist);
+        return oplist;
     }
-
 }
 
 class DifinitionStmnt extends ASTList {
@@ -38,15 +48,26 @@ class DifinitionStmnt extends ASTList {
 
     @Override
     public OpList eval() throws RuntimeException {
-        // TODO Auto-generated method stub
-        return null;
+        var oplist = new OpList();
+
+        oplist.addOpblock(this.getExpression().eval());
+        oplist.addOpcode(OpCodes.OPCODE_RETURN);
+
+        return oplist;
     }
 
+    public NonTerminationStmnt getIdentifire() {
+        return (NonTerminationStmnt) getChildren().get(0);
+    }
+
+    public ASTree getExpression() {
+        return getChildren().get(1);
+    }
 }
 
-class ParsingExpressionChoiceStmnt extends ASTList {
+class PEChoiceStmnt extends ASTList {
 
-    public ParsingExpressionChoiceStmnt(List<ASTree> children) {
+    public PEChoiceStmnt(List<ASTree> children) {
         super(children);
     }
 
@@ -64,15 +85,18 @@ class ParsingExpressionChoiceStmnt extends ASTList {
     }
 }
 
-class ParsingExpressionSeqStmnt extends ASTList {
+class PESequenceStmnt extends ASTList {
 
-    public ParsingExpressionSeqStmnt(List<ASTree> children) {
+    public PESequenceStmnt(List<ASTree> children) {
         super(children);
     }
 
     @Override
     public OpList eval() {
-        return PiFunctions.Sequence(left().eval(), right().eval());
+    	OpList left = left().eval();
+    	OpList right = right().eval();
+
+        return PiFunctions.Sequence(left, right);
     }
 
     private ASTree left() {

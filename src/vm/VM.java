@@ -21,6 +21,7 @@ public class VM {
 
     public boolean exec() throws ParseException {
         while (true) {
+        	System.out.println(ip + ":" + pc);
             byte opcode = program[pc++];
             if (opcode == OpCodes.OPCODE_CHAR) {
                 inst_char();
@@ -41,7 +42,7 @@ public class VM {
             } else if (opcode == OpCodes.OPCODE_END) {
                 return inst_end();
             } else {
-                throw new ParseException("unknown instruction");
+                throw new ParseException("unknown instruction:" + pc);
             }
         }
     }
@@ -67,8 +68,8 @@ public class VM {
     }
 
     private void inst_call() {
-        stack.push(new ReturnEntry(pc));
         int addrOffset = readIntOperand();
+        stack.push(new ReturnEntry(pc));
         pc = pc + addrOffset;
     }
 
@@ -100,6 +101,7 @@ public class VM {
     }
 
     private void inst_fail() {
+    	int failedip = ip;
         while (!stack.isEmpty()) {
             Entry entry = stack.pop();
             if (entry instanceof BacktrackEntry) {
@@ -109,7 +111,7 @@ public class VM {
                 return;
             }
         }
-        System.out.println("syntax error: " + ip);
+        System.out.println("syntax error: " + failedip);
         System.exit(-1);
     }
 
@@ -118,7 +120,12 @@ public class VM {
     }
 
     private int readIntOperand() {
-        return (program[pc++]) | (program[pc++] << 8) | (program[pc++] << 16) | (program[pc++] << 24);
+    	
+    	int mask = 0x000000ff;
+    	int operand = ((program[pc+3] & mask) << 24) | ((program[pc+2] & mask) << 16) | ((program[pc+1] & mask) << 8) | (program[pc] & mask);	
+    	pc = pc + 4;
+ 
+        return operand;
     }
 }
 

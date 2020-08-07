@@ -15,8 +15,6 @@ public class VMCodeGenerator {
     private static int ip;
     private static String input;
 
-    private static Class<VMCodeGenerator> thisclass = VMCodeGenerator.class;
-
     public static byte[] generate(String _input) throws SyntaxError {
 
         // PEG構文木生成
@@ -25,8 +23,8 @@ public class VMCodeGenerator {
         input = _input;
 
         ASTree tree = Grammer(input);
-
-        return null;
+        OpList oplist = tree.eval();
+        return oplist.toArray();
     }
 
     private static ASTree Grammer(String input) throws SyntaxError {
@@ -60,14 +58,14 @@ public class VMCodeGenerator {
             return left;
         }
         ASTree right = Expression();
-        return new ParsingExpressionChoiceStmnt(Arrays.asList(left, right));
+        return new PEChoiceStmnt(Arrays.asList(left, right));
     }
 
     private static ASTree Sequence() throws SyntaxError {
         ASTree left = Prefix();
         try {
             ASTree right = Sequence();
-            return new ParsingExpressionSeqStmnt(Arrays.asList(left, right));
+            return new PESequenceStmnt(Arrays.asList(left, right));
         } catch (Exception e) {
             return left;
         }
@@ -256,6 +254,7 @@ public class VMCodeGenerator {
     }
 
     private static char Char() throws SyntaxError {
+        int bip = ip;
         try {
             StringBuilder sb = new StringBuilder();
             sb.append(readChar('\\'));
@@ -263,6 +262,7 @@ public class VMCodeGenerator {
             return Functions.unescape_perl_string(sb.toString()).charAt(0);
         } catch (Exception e) {
             try {
+                ip = bip;
                 StringBuilder sb = new StringBuilder();
                 sb.append(readChar('\\'));
                 sb.append(readChar('x'));
@@ -270,6 +270,7 @@ public class VMCodeGenerator {
                 sb.append(readRange('0', 'f'));
                 return Functions.unescape_perl_string(sb.toString()).charAt(0);
             } catch (Exception e2) {
+                ip = bip;
                 if (peekChar(0, '\\')) {
                     throw new SyntaxError(ip);
                 } else {
