@@ -4,6 +4,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 import peg.OpList;
 import peg.VMCodeGenerator;
@@ -13,7 +17,9 @@ public class PEGCompiler {
     public static void main(String[] args) {
 
         try {
-            String input = readTextFromFileAll(args[0]);
+
+            // String input = readTextFromFileAll(args[0]);
+            List<String> input = Files.readAllLines(Path.of(args[0]), StandardCharsets.UTF_8);
 
             VMCodeGenerator vmcodeGenerator = new VMCodeGenerator(input);
             OpList oplist = vmcodeGenerator.generate();

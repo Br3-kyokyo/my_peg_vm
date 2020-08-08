@@ -7,37 +7,37 @@ import java.util.List;
 public class VMCodeGenerator {
 
     private int ip;
-    private String input;
+    private String line;
+    private List<String> input;
 
-    public VMCodeGenerator(String input) {
-        ip = 0;
+    public VMCodeGenerator(List<String> input) {
         this.input = input;
     }
 
     public OpList generate() throws SyntaxError {
-        ASTree tree = Grammer(input);
+        ASTree tree = Grammer();
         OpList oplist = tree.eval();
         return oplist;
     }
 
-    private ASTree Grammer(String input) throws SyntaxError {
+    private ASTree Grammer() throws SyntaxError {
 
         List<ASTree> list = new ArrayList<ASTree>();
 
-        Spacing();
-        list.add(Difinition());
-        try {
-            while (true)
+        for (var line : input) {
+            ip = 0;
+            this.line = line;
+
+            int bip = ip;
+            try {
+                Spacing();
+                EOL();
+            } catch (SyntaxError e) {
+                ip = bip;
                 list.add(Difinition());
-        } catch (SyntaxError e) {
+                EOL();
+            }
         }
-
-        try {
-            EndOfFile();
-        } catch (SyntaxError e) {
-            System.out.println("Syntax error.");
-        }
-
         return new GrammerStmnt(list);
     }
 
@@ -233,7 +233,7 @@ public class VMCodeGenerator {
             if (peekChar(0, '"')) {
                 break;
             } else {
-                sb.append(input.charAt(ip++));
+                sb.append(line.charAt(ip++));
             }
         }
         readChar('"');
@@ -295,7 +295,7 @@ public class VMCodeGenerator {
         if (peekChar(0, '\\')) {
             throw new SyntaxError(ip);
         } else {
-            return input.charAt(ip++);
+            return line.charAt(ip++);
         }
     }
 
@@ -374,7 +374,7 @@ public class VMCodeGenerator {
         readChar('#');
         while (true) {
             try {
-                EndOfLine();
+                EOL();
                 break;
             } catch (Exception e) {
                 ip++;
@@ -386,37 +386,38 @@ public class VMCodeGenerator {
         try {
             readChar(' ');
         } catch (SyntaxError e) {
-            try {
-                readChar('\t');
-            } catch (SyntaxError e2) {
-                EndOfLine();
-            }
+            readChar('\t');
         }
     }
 
-    private void EndOfLine() throws SyntaxError {
+    private void EOL() throws SyntaxError {
+        // 改行文字がない場合
+        if (line.length() == ip)
+            return;
+
+        // 改行文字がある場合
         try {
             readChar('\r');
             readChar('\n');
         } catch (SyntaxError e) {
-            try {
-                readChar('\n');
-            } catch (SyntaxError e2) {
-                readChar('\r');
-            }
+        }
+        try {
+            readChar('\n');
+        } catch (SyntaxError e2) {
+            readChar('\r');
         }
     }
 
     private void EndOfFile() throws SyntaxError {
-        if (input.length() == ip)
+        if (line.length() == ip)
             return;
         throw new SyntaxError(ip);
     }
 
     private char readRange(char start, char end) throws SyntaxError {
-        if (input.length() == ip)
+        if (line.length() == ip)
             throw new SyntaxError(ip);
-        char ic = input.charAt(ip);
+        char ic = line.charAt(ip);
 
         for (char c = start; c <= end; c++) {
             if (c == ic) {
@@ -429,9 +430,9 @@ public class VMCodeGenerator {
     }
 
     private char readRange(List<Character> list) throws SyntaxError {
-        if (input.length() == ip)
+        if (line.length() == ip)
             throw new SyntaxError(ip);
-        char ic = input.charAt(ip);
+        char ic = line.charAt(ip);
 
         for (char c : list) {
             if (c == ic) {
@@ -444,10 +445,10 @@ public class VMCodeGenerator {
     }
 
     private char readChar(char c) throws SyntaxError {
-        if (input.length() == ip)
+        if (line.length() == ip)
             throw new SyntaxError(ip);
 
-        char ic = input.charAt(ip);
+        char ic = line.charAt(ip);
         if (ic == c) {
             ip++;
             return c;
@@ -457,7 +458,7 @@ public class VMCodeGenerator {
     }
 
     private boolean peekChar(int offset, char c) {
-        char ic = input.charAt(ip + offset);
+        char ic = line.charAt(ip + offset);
         if (ic == c) {
             return true;
         } else {
