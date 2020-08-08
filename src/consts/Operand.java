@@ -1,8 +1,5 @@
 package consts;
 
-public class Operand {
-    private Operand() {
-    }
+public class Operand extends Op {
 
-    public static final int BYTES = 4;
 }

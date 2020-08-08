@@ -1,7 +1,7 @@
 package peg;
 
 import java.util.List;
-import consts.Opcode;
+import consts.*;
 
 public class PiFunctions {
 
@@ -12,7 +12,7 @@ public class PiFunctions {
         var list = new OpList();
 
         list.addOpcode(Opcode.OPCODE_CHOICE);
-        list.addOperand(e1.size() + 5); // commit命令:5バイト
+        list.addOperand(e1.size() + Opcode.BYTES + IntOperand.BYTES); // commit命令:5バイト
         list.addOpblock(e1);
         list.addOpcode(Opcode.OPCODE_COMMIT);
         list.addOperand(e2.size());
@@ -77,7 +77,7 @@ public class PiFunctions {
         var list = new OpList();
 
         list.addOpcode(Opcode.OPCODE_CHOICE);
-        list.addOperand(e.size() + 5);
+        list.addOperand(e.size() + Opcode.BYTES + IntOperand.BYTES);
         list.addOpblock(e);
         list.addOpcode(Opcode.OPCODE_COMMIT);
         list.addOperand(0);
@@ -89,10 +89,10 @@ public class PiFunctions {
         var list = new OpList();
 
         list.addOpcode(Opcode.OPCODE_CHOICE);
-        list.addOperand(e.size() + 5);
+        list.addOperand(e.size() + Opcode.BYTES + IntOperand.BYTES);
         list.addOpblock(e);
         list.addOpcode(Opcode.OPCODE_COMMIT);
-        list.addOperand(-(e.size() + 5 + 4 + 1));
+        list.addOperand(-(IntOperand.BYTES + Opcode.BYTES + e.size() + Opcode.BYTES + IntOperand.BYTES));
         return list;
 
     }
@@ -107,10 +107,10 @@ public class PiFunctions {
     public static OpList NotPredicate(OpList e) {
         var list = new OpList();
         list.addOpcode(Opcode.OPCODE_CHOICE);
-        list.addOperand(e.size() + 5 + 1);
+        list.addOperand(e.size() + Opcode.BYTES + IntOperand.BYTES + Opcode.BYTES);
         list.addOpblock(e);
         list.addOpcode(Opcode.OPCODE_COMMIT);
-        list.addOperand(1);
+        list.addOperand(Opcode.BYTES);
         list.addOpcode(Opcode.OPCODE_FAIL);
         return list;
     }

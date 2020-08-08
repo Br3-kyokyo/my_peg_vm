@@ -1,6 +1,6 @@
 package consts;
 
-public class Opcode {
+public class Opcode extends Op {
     private Opcode() {
     }
 
