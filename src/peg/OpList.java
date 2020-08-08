@@ -3,8 +3,12 @@ package peg;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.TreeMap;
+
+import consts.OpCodes;
 
 public class OpList {
 
@@ -43,6 +47,7 @@ public class OpList {
 
     public boolean addOpblock(OpList bList) {
 
+        // 番地情報を揃える
         for (var addrntmap : bList.NTtempOpcodeMap.entrySet())
             this.NTtempOpcodeMap.put(this.list.size() + addrntmap.getKey(), addrntmap.getValue());
 
@@ -54,7 +59,7 @@ public class OpList {
         // 計算後は
         // 8+2 = 10
 
-        // 0 1 2 3 4 5 6 7 0 1 2 3
+        // 0 1 2 3 4 5 6 7 0 1 2
 
         return list.addAll(bList.list);
     }
@@ -74,5 +79,75 @@ public class OpList {
             bytes[i] = list.get(i);
 
         return bytes;
+    }
+
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        
+ 
+        int i = 0;
+        while (i < list.size()) {
+            sb.append(Integer.toHexString(i));
+            sb.append(": ");
+            switch (list.get(i++)) {
+                case OpCodes.OPCODE_CHAR:
+                    sb.append("char ");
+                    sb.append(readCharOperand(i));
+                    i = i + 2;
+                    sb.append("\n");
+                    break;
+                case OpCodes.OPCODE_ANY:
+                    sb.append("any\n");
+                    break;
+                case OpCodes.OPCODE_CHOICE:
+                    sb.append("choise ");
+                    sb.append(readIntOperand(i));
+                    i = i + 4;
+                    sb.append("\n");
+                    break;
+                case OpCodes.OPCODE_JUMP:
+                    sb.append("jump ");
+                    sb.append(readIntOperand(i));
+                    i = i + 4;
+                    sb.append("\n");
+                    break;
+                case OpCodes.OPCODE_CALL:
+                    sb.append("call ");
+                    sb.append(readIntOperand(i));
+                    i = i + 4;
+                    sb.append("\n");
+                    break;
+                case OpCodes.OPCODE_RETURN:
+                    sb.append("return\n");
+                    break;
+                case OpCodes.OPCODE_COMMIT:
+                    sb.append("commit ");
+                    sb.append(readIntOperand(i));
+                    i = i + 4;
+                    sb.append("\n");
+                    break;
+                case OpCodes.OPCODE_FAIL:
+                    sb.append("fail\n");
+                    break;
+                case OpCodes.OPCODE_END:
+                    sb.append("end\n");
+                    break;
+            }
+        }
+       
+
+        return sb.toString();
+    }
+
+    private char readCharOperand(int i) {
+        int mask = 0x00ff;
+        return (char) ((list.get(i) & mask) | ((list.get(i + 1) & mask) << 8));
+    }
+
+    private int readIntOperand(int i) {
+        int mask = 0x000000ff;
+        int operand = ((list.get(i + 3) & mask) << 24) | ((list.get(i + 2) & mask) << 16)
+                | ((list.get(i + 1) & mask) << 8) | (list.get(i) & mask);
+        return operand;
     }
 }

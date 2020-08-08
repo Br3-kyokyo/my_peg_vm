@@ -7,27 +7,22 @@ import java.util.List;
 import consts.OpCodes;
 
 public class VMCodeGenerator {
-    // PEG規則を仮想マシンコードに変換する。
-    // インスタンスの作成を禁止: staticクラス
-    private VMCodeGenerator() {
-    };
 
-    private static int ip;
-    private static String input;
+    private int ip;
+    private String input;
 
-    public static byte[] generate(String _input) throws SyntaxError {
-
-        // PEG構文木生成
-        // ASTree grammer = Grammer(pegGrammers);
+    public VMCodeGenerator(String input) {
         ip = 0;
-        input = _input;
-
-        ASTree tree = Grammer(input);
-        OpList oplist = tree.eval();
-        return oplist.toArray();
+        this.input = input;
     }
 
-    private static ASTree Grammer(String input) throws SyntaxError {
+    public OpList generate() throws SyntaxError {
+        ASTree tree = Grammer(input);
+        OpList oplist = tree.eval();
+        return oplist;
+    }
+
+    private ASTree Grammer(String input) throws SyntaxError {
 
         List<ASTree> list = new ArrayList<ASTree>();
 
@@ -43,14 +38,14 @@ public class VMCodeGenerator {
         return new GrammerStmnt(list);
     }
 
-    private static ASTree Difinition() throws SyntaxError {
+    private ASTree Difinition() throws SyntaxError {
         ASTree id = Identifire();
         LEFTARROW();
         ASTree expr = Expression();
         return new DifinitionStmnt(Arrays.asList(id, expr));
     }
 
-    private static ASTree Expression() throws SyntaxError {
+    private ASTree Expression() throws SyntaxError {
         ASTree left = Sequence();
         try {
             SLASH();
@@ -61,7 +56,7 @@ public class VMCodeGenerator {
         return new PEChoiceStmnt(Arrays.asList(left, right));
     }
 
-    private static ASTree Sequence() throws SyntaxError {
+    private ASTree Sequence() throws SyntaxError {
         ASTree left = Prefix();
         try {
             ASTree right = Sequence();
@@ -71,7 +66,7 @@ public class VMCodeGenerator {
         }
     }
 
-    private static ASTree Prefix() throws SyntaxError {
+    private ASTree Prefix() throws SyntaxError {
         Modifire mod = null;
         try {
             try {
@@ -91,7 +86,7 @@ public class VMCodeGenerator {
         return pe;
     }
 
-    private static ParsingExpression Suffix() throws SyntaxError {
+    private ParsingExpression Suffix() throws SyntaxError {
         ParsingExpression pe = Primary();
         try {
             try {
@@ -114,7 +109,7 @@ public class VMCodeGenerator {
         }
     }
 
-    private static ParsingExpression Primary() throws SyntaxError {
+    private ParsingExpression Primary() throws SyntaxError {
 
         try {
             int bip = ip;
@@ -163,7 +158,7 @@ public class VMCodeGenerator {
     }
 
     // * Lexical Syntax *//
-    private static ASTree Identifire() throws SyntaxError {
+    private ASTree Identifire() throws SyntaxError {
         StringBuilder sb = new StringBuilder();
         sb.append(IdentStart());
         try {
@@ -175,7 +170,7 @@ public class VMCodeGenerator {
         return new NonTerminationStmnt(sb.toString());
     }
 
-    private static char IdentStart() throws SyntaxError {
+    private char IdentStart() throws SyntaxError {
         try {
             return readRange('a', 'z');
         } catch (SyntaxError e) {
@@ -187,7 +182,7 @@ public class VMCodeGenerator {
         }
     }
 
-    private static char IdentCont() throws SyntaxError {
+    private char IdentCont() throws SyntaxError {
         try {
             return IdentStart();
         } catch (SyntaxError e) {
@@ -195,7 +190,7 @@ public class VMCodeGenerator {
         }
     }
 
-    private static ASTree CharLiteral() throws SyntaxError {
+    private ASTree CharLiteral() throws SyntaxError {
         readChar('\'');
         if (peekChar(0, '\'')) {
             readChar('\'');
@@ -209,7 +204,7 @@ public class VMCodeGenerator {
         }
     }
 
-    private static StringStmnt StringLiteral() throws SyntaxError {
+    private StringStmnt StringLiteral() throws SyntaxError {
         StringBuilder sb = new StringBuilder();
         readChar('"');
         while (true) {
@@ -224,7 +219,7 @@ public class VMCodeGenerator {
         return new StringStmnt(sb.toString());
     }
 
-    private static BracketStmnt Class() throws SyntaxError {
+    private BracketStmnt Class() throws SyntaxError {
         List<List<Character>> tuplelist = new ArrayList<List<Character>>(); // タプルのリスト(内側のリストは要素数二つに限る)
 
         readChar('[');
@@ -242,7 +237,7 @@ public class VMCodeGenerator {
         return new BracketStmnt(tuplelist);
     }
 
-    private static List<Character> Range() throws SyntaxError {
+    private List<Character> Range() throws SyntaxError {
         char c1 = Char();
         if (peekChar(0, '-')) {
             readChar('-');
@@ -253,7 +248,7 @@ public class VMCodeGenerator {
         }
     }
 
-    private static char Char() throws SyntaxError {
+    private char Char() throws SyntaxError {
         int bip = ip;
         try {
             StringBuilder sb = new StringBuilder();
@@ -280,59 +275,59 @@ public class VMCodeGenerator {
         }
     }
 
-    private static void LEFTARROW() throws SyntaxError {
+    private void LEFTARROW() throws SyntaxError {
         readChar('<');
         readChar('-');
         Spacing();
     }
 
-    private static void SLASH() throws SyntaxError {
+    private void SLASH() throws SyntaxError {
         readChar('/');
         Spacing();
     }
 
-    private static void AND() throws SyntaxError {
+    private void AND() throws SyntaxError {
         readChar('&');
         Spacing();
     }
 
-    private static void NOT() throws SyntaxError {
+    private void NOT() throws SyntaxError {
         readChar('!');
         Spacing();
     }
 
-    private static void QUESTION() throws SyntaxError {
+    private void QUESTION() throws SyntaxError {
         readChar('?');
         Spacing();
     }
 
-    private static void STAR() throws SyntaxError {
+    private void STAR() throws SyntaxError {
         readChar('*');
         Spacing();
     }
 
-    private static void PLUS() throws SyntaxError {
+    private void PLUS() throws SyntaxError {
         readChar('+');
         Spacing();
     }
 
-    private static void OPEN() throws SyntaxError {
+    private void OPEN() throws SyntaxError {
         readChar('(');
         Spacing();
     }
 
-    private static void CLOSE() throws SyntaxError {
+    private void CLOSE() throws SyntaxError {
         readChar(')');
         Spacing();
     }
 
-    private static ASTree DOT() throws SyntaxError {
+    private ASTree DOT() throws SyntaxError {
         readChar('.');
         Spacing();
         return new DotStmnt();
     }
 
-    private static void Spacing() {
+    private void Spacing() {
         // Method space = thisclass.getMethod("Space");
         // Method comment = thisclass.getMethod("Comment");
         // space.
@@ -351,7 +346,7 @@ public class VMCodeGenerator {
         }
     }
 
-    private static void Comment() throws SyntaxError {
+    private void Comment() throws SyntaxError {
         readChar('#');
         while (true) {
             try {
@@ -363,7 +358,7 @@ public class VMCodeGenerator {
         }
     }
 
-    private static void Space() throws SyntaxError {
+    private void Space() throws SyntaxError {
         try {
             readChar(' ');
         } catch (SyntaxError e) {
@@ -375,7 +370,7 @@ public class VMCodeGenerator {
         }
     }
 
-    private static void EndOfLine() throws SyntaxError {
+    private void EndOfLine() throws SyntaxError {
         try {
             readChar('\r');
             readChar('\n');
@@ -388,18 +383,18 @@ public class VMCodeGenerator {
         }
     }
 
-    private static void EndOfFile() throws SyntaxError {
+    private void EndOfFile() throws SyntaxError {
         if (input.length() == ip)
             return;
         throw new SyntaxError(ip);
     }
 
-    private static char readRange(char start, char end) throws SyntaxError {
+    private char readRange(char start, char end) throws SyntaxError {
         if (input.length() == ip)
             throw new SyntaxError(ip);
         char ic = input.charAt(ip);
 
-        for (char c = start; c != end; c++) {
+        for (char c = start; c <= end; c++) {
             if (c == ic) {
                 ip++;
                 return c;
@@ -409,7 +404,7 @@ public class VMCodeGenerator {
         throw new SyntaxError(ip);
     }
 
-    private static char readRange(List<Character> list) throws SyntaxError {
+    private char readRange(List<Character> list) throws SyntaxError {
         if (input.length() == ip)
             throw new SyntaxError(ip);
         char ic = input.charAt(ip);
@@ -424,7 +419,7 @@ public class VMCodeGenerator {
         throw new SyntaxError(ip);
     }
 
-    private static char readChar(char c) throws SyntaxError {
+    private char readChar(char c) throws SyntaxError {
         if (input.length() == ip)
             throw new SyntaxError(ip);
 
@@ -437,7 +432,7 @@ public class VMCodeGenerator {
         }
     }
 
-    private static boolean peekChar(int offset, char c) {
+    private boolean peekChar(int offset, char c) {
         char ic = input.charAt(ip + offset);
         if (ic == c) {
             return true;

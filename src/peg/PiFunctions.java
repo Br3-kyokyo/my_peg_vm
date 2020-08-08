@@ -131,8 +131,14 @@ public class PiFunctions {
                 oplist.remove(replaceTargetAddr);
             
             // 当該アドレスを埋める
-            int offset = OpList.NTaddressMap.get(nt) - (replaceTargetAddr + 4);
-            oplist.addOperand(replaceTargetAddr, offset);
+            try {
+            	int offset = OpList.NTaddressMap.get(nt) - (replaceTargetAddr + 4);
+                oplist.addOperand(replaceTargetAddr, offset);
+            }catch(NullPointerException e) {
+            	System.out.println("存在しない非終端記号を参照しています。:" + nt);
+            	e.printStackTrace();
+            	System.exit(-1);
+            }
         }
 
         // 0 1 2 3 4 5 6 7

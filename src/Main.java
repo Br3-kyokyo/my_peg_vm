@@ -21,8 +21,8 @@ public class Main {
             e.printStackTrace();
         } catch (ParseException e) {
             e.printStackTrace();
-        }catch (Exception e) {
-        	e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
     }

@@ -21,7 +21,7 @@ public class VM {
 
     public boolean exec() throws ParseException {
         while (true) {
-        	System.out.println(ip + ":" + pc);
+            System.out.println(ip + ":" + Integer.toHexString(pc));
             byte opcode = program[pc++];
             if (opcode == OpCodes.OPCODE_CHAR) {
                 inst_char();
@@ -92,6 +92,10 @@ public class VM {
     }
 
     private void inst_char() {
+        if (inputString.length == ip) {
+        	inst_fail();
+        	return;
+        }
         char c = inputString[ip];
         char operand = readCharOperand();
         if (c == operand)
@@ -101,7 +105,7 @@ public class VM {
     }
 
     private void inst_fail() {
-    	int failedip = ip;
+        int failedip = ip;
         while (!stack.isEmpty()) {
             Entry entry = stack.pop();
             if (entry instanceof BacktrackEntry) {
@@ -116,15 +120,17 @@ public class VM {
     }
 
     private char readCharOperand() {
-        return (char) ((program[pc++]) | (program[pc++] << 8));
+        int mask = 0x00ff;
+        return (char) ((program[pc++] & mask) | ((program[pc++] & mask) << 8));
     }
 
     private int readIntOperand() {
-    	
-    	int mask = 0x000000ff;
-    	int operand = ((program[pc+3] & mask) << 24) | ((program[pc+2] & mask) << 16) | ((program[pc+1] & mask) << 8) | (program[pc] & mask);	
-    	pc = pc + 4;
- 
+
+        int mask = 0x000000ff;
+        int operand = ((program[pc + 3] & mask) << 24) | ((program[pc + 2] & mask) << 16)
+                | ((program[pc + 1] & mask) << 8) | (program[pc] & mask);
+        pc = pc + 4;
+
         return operand;
     }
 }

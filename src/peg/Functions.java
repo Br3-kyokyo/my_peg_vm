@@ -346,4 +346,9 @@ public class Functions {
     private static final void say(String what) {
         System.out.println(what);
     }
+
+    public static <E extends Enum<E>> E fromOrdinal(Class<E> enumClass, byte ordinal) {
+        E[] enumArray = enumClass.getEnumConstants();
+        return enumArray[ordinal];
+    }
 }
