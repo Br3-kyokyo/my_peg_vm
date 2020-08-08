@@ -3,7 +3,7 @@ package peg;
 import java.util.Arrays;
 import java.util.List;
 
-import consts.OpCodes;
+import consts.Opcode;
 
 public abstract class ASTList extends ASTree {
     private List<ASTree> children;
@@ -27,9 +27,9 @@ class GrammerStmnt extends ASTList {
     @Override
     public OpList eval() throws RuntimeException {
         var oplist = new OpList();
-        oplist.addOpcode(OpCodes.OPCODE_CALL);
+        oplist.addOpcode(Opcode.OPCODE_CALL);
         oplist.addOperand(1);
-        oplist.addOpcode(OpCodes.OPCODE_END);
+        oplist.addOpcode(Opcode.OPCODE_END);
         for (ASTree tree : getChildren()) {
             DifinitionStmnt dif = (DifinitionStmnt) tree;
             OpList.NTaddressMap.put(dif.getIdentifire().name, oplist.size());
@@ -51,7 +51,7 @@ class DifinitionStmnt extends ASTList {
         var oplist = new OpList();
 
         oplist.addOpblock(this.getExpression().eval());
-        oplist.addOpcode(OpCodes.OPCODE_RETURN);
+        oplist.addOpcode(Opcode.OPCODE_RETURN);
 
         return oplist;
     }
@@ -93,8 +93,8 @@ class PESequenceStmnt extends ASTList {
 
     @Override
     public OpList eval() {
-    	OpList left = left().eval();
-    	OpList right = right().eval();
+        OpList left = left().eval();
+        OpList right = right().eval();
 
         return PiFunctions.Sequence(left, right);
     }

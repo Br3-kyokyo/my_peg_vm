@@ -1,7 +1,7 @@
 package consts;
 
-public class OpCodes {
-    private OpCodes() {
+public class Opcode {
+    private Opcode() {
     }
 
     public static final byte OPCODE_CHAR = 0x00;
@@ -13,6 +13,8 @@ public class OpCodes {
     public static final byte OPCODE_COMMIT = 0x06;
     public static final byte OPCODE_FAIL = 0x07;
     public static final byte OPCODE_END = 0x08;
+
+    public static final int BYTES = 1;
 
     public static String getName(byte b) {
         switch (b) {

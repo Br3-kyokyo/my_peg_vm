@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import consts.OpCodes;
+import consts.Opcode;
 
 public class VMCodeGenerator {
 
@@ -33,7 +33,13 @@ public class VMCodeGenerator {
                 list.add(Difinition());
         } catch (SyntaxError e) {
         }
-        EndOfFile();
+
+        try {
+            EndOfFile();
+        } catch (SyntaxError e) {
+            System.out.println("Syntax error.");
+
+        }
 
         return new GrammerStmnt(list);
     }

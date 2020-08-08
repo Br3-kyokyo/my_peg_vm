@@ -3,12 +3,10 @@ package peg;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.TreeMap;
 
-import consts.OpCodes;
+import consts.Opcode;
 
 public class OpList {
 
@@ -47,19 +45,17 @@ public class OpList {
 
     public boolean addOpblock(OpList bList) {
 
-        // 番地情報を揃える
+        // 非終端記号呼び出しの番地情報を揃える
         for (var addrntmap : bList.NTtempOpcodeMap.entrySet())
             this.NTtempOpcodeMap.put(this.list.size() + addrntmap.getKey(), addrntmap.getValue());
 
         // blist: 0 1 2 3
         // this: 0 1 2 3 4 5 6 7
-
         // 2が該当する位置とする。call命令が入っている。
         // この場合、元のマップでは2にntがマップされている
         // 計算後は
         // 8+2 = 10
-
-        // 0 1 2 3 4 5 6 7 0 1 2
+        // 0 1 2 3 4 5 6 7 0 1 2 3
 
         return list.addAll(bList.list);
     }
@@ -72,7 +68,7 @@ public class OpList {
         return list.remove(index);
     }
 
-    public byte[] toArray() {
+    public byte[] toBinary() {
         byte[] bytes = new byte[list.size()];
 
         for (int i = 0; i < list.size(); i++)
@@ -81,60 +77,59 @@ public class OpList {
         return bytes;
     }
 
+    // バイト列を文字列に変換
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        
- 
+
         int i = 0;
         while (i < list.size()) {
             sb.append(Integer.toHexString(i));
             sb.append(": ");
             switch (list.get(i++)) {
-                case OpCodes.OPCODE_CHAR:
+                case Opcode.OPCODE_CHAR:
                     sb.append("char ");
                     sb.append(readCharOperand(i));
                     i = i + 2;
                     sb.append("\n");
                     break;
-                case OpCodes.OPCODE_ANY:
+                case Opcode.OPCODE_ANY:
                     sb.append("any\n");
                     break;
-                case OpCodes.OPCODE_CHOICE:
+                case Opcode.OPCODE_CHOICE:
                     sb.append("choise ");
                     sb.append(readIntOperand(i));
                     i = i + 4;
                     sb.append("\n");
                     break;
-                case OpCodes.OPCODE_JUMP:
+                case Opcode.OPCODE_JUMP:
                     sb.append("jump ");
                     sb.append(readIntOperand(i));
                     i = i + 4;
                     sb.append("\n");
                     break;
-                case OpCodes.OPCODE_CALL:
+                case Opcode.OPCODE_CALL:
                     sb.append("call ");
                     sb.append(readIntOperand(i));
                     i = i + 4;
                     sb.append("\n");
                     break;
-                case OpCodes.OPCODE_RETURN:
+                case Opcode.OPCODE_RETURN:
                     sb.append("return\n");
                     break;
-                case OpCodes.OPCODE_COMMIT:
+                case Opcode.OPCODE_COMMIT:
                     sb.append("commit ");
                     sb.append(readIntOperand(i));
                     i = i + 4;
                     sb.append("\n");
                     break;
-                case OpCodes.OPCODE_FAIL:
+                case Opcode.OPCODE_FAIL:
                     sb.append("fail\n");
                     break;
-                case OpCodes.OPCODE_END:
+                case Opcode.OPCODE_END:
                     sb.append("end\n");
                     break;
             }
         }
-       
 
         return sb.toString();
     }

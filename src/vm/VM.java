@@ -3,7 +3,7 @@ package vm;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import consts.OpCodes;
+import consts.Opcode;
 
 //構文解析に特化した仮想マシン
 public class VM {
@@ -23,23 +23,23 @@ public class VM {
         while (true) {
             System.out.println(ip + ":" + Integer.toHexString(pc));
             byte opcode = program[pc++];
-            if (opcode == OpCodes.OPCODE_CHAR) {
+            if (opcode == Opcode.OPCODE_CHAR) {
                 inst_char();
-            } else if (opcode == OpCodes.OPCODE_ANY) {
+            } else if (opcode == Opcode.OPCODE_ANY) {
                 inst_any();
-            } else if (opcode == OpCodes.OPCODE_CHOICE) {
+            } else if (opcode == Opcode.OPCODE_CHOICE) {
                 inst_choice();
-            } else if (opcode == OpCodes.OPCODE_JUMP) {
+            } else if (opcode == Opcode.OPCODE_JUMP) {
                 inst_jump();
-            } else if (opcode == OpCodes.OPCODE_CALL) {
+            } else if (opcode == Opcode.OPCODE_CALL) {
                 inst_call();
-            } else if (opcode == OpCodes.OPCODE_RETURN) {
+            } else if (opcode == Opcode.OPCODE_RETURN) {
                 inst_return();
-            } else if (opcode == OpCodes.OPCODE_COMMIT) {
+            } else if (opcode == Opcode.OPCODE_COMMIT) {
                 inst_commit();
-            } else if (opcode == OpCodes.OPCODE_FAIL) {
+            } else if (opcode == Opcode.OPCODE_FAIL) {
                 inst_fail();
-            } else if (opcode == OpCodes.OPCODE_END) {
+            } else if (opcode == Opcode.OPCODE_END) {
                 return inst_end();
             } else {
                 throw new ParseException("unknown instruction:" + pc);
@@ -93,8 +93,8 @@ public class VM {
 
     private void inst_char() {
         if (inputString.length == ip) {
-        	inst_fail();
-        	return;
+            inst_fail();
+            return;
         }
         char c = inputString[ip];
         char operand = readCharOperand();

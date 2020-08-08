@@ -16,17 +16,10 @@ public class PEGCompiler {
             String input = readTextFromFileAll(args[0]);
 
             VMCodeGenerator vmcodeGenerator = new VMCodeGenerator(input);
-            OpList vmcode = vmcodeGenerator.generate();
-            byte[] vmcode_byte = vmcode.toArray();
+            OpList oplist = vmcodeGenerator.generate();
 
-            FileOutputStream fos = new FileOutputStream("vmcode.bin");
-            fos.write(vmcode_byte);
-            fos.close();
-
-            String metadata = vmcode.toString();
-            FileWriter fw = new FileWriter("vmcode.meta");
-            fw.write(metadata);
-            fw.close();
+            outputBinaryCode(oplist.toBinary(), "vmcode.bin");
+            outputMetaData(oplist.toString(), "vmcode.meta");
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -35,6 +28,18 @@ public class PEGCompiler {
             e.printStackTrace();
             return;
         }
+    }
+
+    private static void outputBinaryCode(byte[] vmcode_byte, String filename) throws IOException {
+        FileOutputStream fos = new FileOutputStream(filename);
+        fos.write(vmcode_byte);
+        fos.close();
+    }
+
+    private static void outputMetaData(String string, String filename) throws IOException {
+        FileWriter fw = new FileWriter(filename);
+        fw.write(string);
+        fw.close();
     }
 
     private static String readTextFromFileAll(String path) throws IOException {
