@@ -6,7 +6,8 @@ import java.util.List;
 
 public class VMCodeGenerator {
 
-    private int ip;
+    private int ip; // input position - 行における位置
+    private int lp; // line position - 現在の行番号
     private String line;
     private List<String> input;
 
@@ -14,19 +15,38 @@ public class VMCodeGenerator {
         this.input = input;
     }
 
-    public OpList generate() throws SyntaxError {
-        ASTree tree = Grammer();
-        OpList oplist = tree.eval();
-        return oplist;
+    public OpList generate() {
+
+        try {
+            ASTree tree = Grammer();
+            OpList oplist = tree.eval();
+            return oplist;
+        } catch (SyntaxError e) {
+            System.out.println(lp + ":" + ip + ": SyntaxError");
+            System.out.println(input.get(lp));
+
+            for (int i = 0; i < input.size(); i++) {
+                if (i == ip)
+                    System.out.print("^");
+                else
+                    System.out.print(" ");
+            }
+            System.exit(-1);
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
+
+        return null; // unreachable (なはず…)
     }
 
     private ASTree Grammer() throws SyntaxError {
 
         List<ASTree> list = new ArrayList<ASTree>();
 
-        for (var line : input) {
+        for (lp = 0; lp < input.size(); lp++) {
             ip = 0;
-            this.line = line;
+            this.line = input.get(lp);
 
             int bip = ip;
             try {
