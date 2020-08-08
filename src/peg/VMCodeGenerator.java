@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import consts.Opcode;
-
 public class VMCodeGenerator {
 
     private int ip;
@@ -38,7 +36,6 @@ public class VMCodeGenerator {
             EndOfFile();
         } catch (SyntaxError e) {
             System.out.println("Syntax error.");
-
         }
 
         return new GrammerStmnt(list);
@@ -55,7 +52,7 @@ public class VMCodeGenerator {
         ASTree left = Sequence();
         try {
             SLASH();
-        } catch (Exception e) {
+        } catch (SyntaxError e) {
             return left;
         }
         ASTree right = Expression();
@@ -63,26 +60,35 @@ public class VMCodeGenerator {
     }
 
     private ASTree Sequence() throws SyntaxError {
-        ASTree left = Prefix();
+        ASTree left = null;
+
+        try {
+            left = Prefix();
+        } catch (SyntaxError e) {
+            return new EmptyStmnt();
+        }
+
         try {
             ASTree right = Sequence();
             return new PESequenceStmnt(Arrays.asList(left, right));
-        } catch (Exception e) {
+        } catch (SyntaxError e) {
             return left;
         }
     }
 
     private ASTree Prefix() throws SyntaxError {
         Modifire mod = null;
+
         try {
-            try {
-                AND();
-                mod = Modifire.amplifire;
-            } catch (SyntaxError e) {
-                NOT();
-                mod = Modifire.exclamation;
-            }
-        } catch (Exception e) {
+            AND();
+            mod = Modifire.amplifire;
+        } catch (SyntaxError e) {
+        }
+
+        try {
+            NOT();
+            mod = Modifire.exclamation;
+        } catch (SyntaxError e) {
         }
 
         ParsingExpression pe = Suffix();
@@ -95,33 +101,37 @@ public class VMCodeGenerator {
     private ParsingExpression Suffix() throws SyntaxError {
         ParsingExpression pe = Primary();
         try {
-            try {
-                QUESTION();
-                pe.modifire = Modifire.question;
-                return pe;
-            } catch (SyntaxError e) {
-                try {
-                    STAR();
-                    pe.modifire = Modifire.asterisk;
-                    return pe;
-                } catch (Exception e2) {
-                    PLUS();
-                    pe.modifire = Modifire.plus;
-                    return pe;
-                }
-            }
-        } catch (SyntaxError e) {
+            QUESTION();
+            pe.modifire = Modifire.question;
             return pe;
+        } catch (SyntaxError e) {
         }
+
+        try {
+            STAR();
+            pe.modifire = Modifire.asterisk;
+            return pe;
+        } catch (SyntaxError e) {
+        }
+
+        try {
+            PLUS();
+            pe.modifire = Modifire.plus;
+            return pe;
+        } catch (SyntaxError e) {
+        }
+
+        return pe;
+
     }
 
     private ParsingExpression Primary() throws SyntaxError {
+        int bip = ip;
 
         try {
-            int bip = ip;
-            int bpredicateip = 0;
-
             ASTree identifire = Identifire();
+
+            int bpredicateip = 0;
             try {
                 bpredicateip = ip;
                 LEFTARROW();
@@ -129,37 +139,43 @@ public class VMCodeGenerator {
                 ip = bpredicateip;
                 return new ParsingExpression(identifire, Modifire.none);
             }
-
-            ip = bip;
             throw new SyntaxError(ip);
-
         } catch (SyntaxError e) {
-            try {
-                OPEN();
-                ASTree tree = Expression();
-                CLOSE();
-                return new ParsingExpression(tree, Modifire.none);
-            } catch (Exception e2) {
-                try {
-                    ASTree cliteral = CharLiteral();
-                    return new ParsingExpression(cliteral, Modifire.none);
-                } catch (Exception e3) {
-                    try {
-                        StringStmnt sliteral = StringLiteral();
-                        return new ParsingExpression(sliteral, Modifire.none);
-                    } catch (Exception e5) {
-                        try {
-                            BracketStmnt range = Class();
-                            return new ParsingExpression(range, Modifire.none);
-                        } catch (Exception e4) {
-                            ASTree dot = DOT();
-                            return new ParsingExpression(dot, Modifire.none);
-                        }
-                    }
-
-                }
-            }
+            ip = bip;
         }
+
+        try {
+            OPEN();
+            ASTree tree = Expression();
+            CLOSE();
+            return new ParsingExpression(tree, Modifire.none);
+        } catch (SyntaxError e) {
+            ip = bip;
+        }
+
+        try {
+            ASTree cliteral = CharLiteral();
+            return new ParsingExpression(cliteral, Modifire.none);
+        } catch (SyntaxError e) {
+            ip = bip;
+        }
+
+        try {
+            StringStmnt sliteral = StringLiteral();
+            return new ParsingExpression(sliteral, Modifire.none);
+        } catch (SyntaxError e) {
+            ip = bip;
+        }
+
+        try {
+            BracketStmnt range = Class();
+            return new ParsingExpression(range, Modifire.none);
+        } catch (SyntaxError e) {
+            ip = bip;
+        }
+
+        ASTree dot = DOT();
+        return new ParsingExpression(dot, Modifire.none);
 
     }
 
@@ -226,7 +242,7 @@ public class VMCodeGenerator {
     }
 
     private BracketStmnt Class() throws SyntaxError {
-        List<List<Character>> tuplelist = new ArrayList<List<Character>>(); // タプルのリスト(内側のリストは要素数二つに限る)
+        List<List<Character>> tuplelist = new ArrayList<List<Character>>(); // タプルのリスト(内側のリストは要素数2)
 
         readChar('[');
         while (true) {
@@ -261,23 +277,25 @@ public class VMCodeGenerator {
             sb.append(readChar('\\'));
             sb.append(readRange(Arrays.asList('n', 'r', 't', '\'', '"', '[', ']', '\\')));
             return Functions.unescape_perl_string(sb.toString()).charAt(0);
-        } catch (Exception e) {
-            try {
-                ip = bip;
-                StringBuilder sb = new StringBuilder();
-                sb.append(readChar('\\'));
-                sb.append(readChar('x'));
-                sb.append(readRange('0', 'f'));
-                sb.append(readRange('0', 'f'));
-                return Functions.unescape_perl_string(sb.toString()).charAt(0);
-            } catch (Exception e2) {
-                ip = bip;
-                if (peekChar(0, '\\')) {
-                    throw new SyntaxError(ip);
-                } else {
-                    return input.charAt(ip++);
-                }
-            }
+        } catch (SyntaxError e) {
+            ip = bip;
+        }
+
+        try {
+            StringBuilder sb = new StringBuilder();
+            sb.append(readChar('\\'));
+            sb.append(readChar('x'));
+            sb.append(readRange('0', 'f'));
+            sb.append(readRange('0', 'f'));
+            return Functions.unescape_perl_string(sb.toString()).charAt(0);
+        } catch (SyntaxError e) {
+            ip = bip;
+        }
+
+        if (peekChar(0, '\\')) {
+            throw new SyntaxError(ip);
+        } else {
+            return input.charAt(ip++);
         }
     }
 
