@@ -110,7 +110,7 @@ public class PiFunctions {
         list.addOperand(e.size() + Opcode.BYTES + IntOperand.BYTES + Opcode.BYTES);
         list.addOpblock(e);
         list.addOpcode(Opcode.OPCODE_COMMIT);
-        list.addOperand(Opcode.BYTES);
+        list.addOperand(0);
         list.addOpcode(Opcode.OPCODE_FAIL);
         return list;
     }
