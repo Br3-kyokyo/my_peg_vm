@@ -19,6 +19,7 @@ public class VMCodeGenerator {
 
         try {
             ASTree tree = Grammer();
+            System.out.println(tree.toString());
             OpList oplist = tree.eval();
             return oplist;
         } catch (SyntaxError e) {

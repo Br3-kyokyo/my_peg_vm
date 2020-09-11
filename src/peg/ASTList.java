@@ -38,6 +38,17 @@ class GrammerStmnt extends ASTList {
         oplist = PiFunctions.ReplaceCallNtAddr(oplist);
         return oplist;
     }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        StringBuilder sb = new StringBuilder();
+        for (ASTree tree : getChildren()) {
+            sb.append(tree.toString());
+            sb.append('\n');
+        }
+        return sb.toString();
+    }
 }
 
 class RuleStmnt extends ASTList {
@@ -63,6 +74,16 @@ class RuleStmnt extends ASTList {
     public ASTree getExpression() {
         return getChildren().get(1);
     }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        StringBuilder sb = new StringBuilder();
+        sb.append(getLeft().toString());
+        sb.append(" -> ");
+        sb.append(getExpression().toString());
+        return sb.toString();
+    }
 }
 
 class ChoiceStmnt extends ASTList {
@@ -82,6 +103,16 @@ class ChoiceStmnt extends ASTList {
 
     private ASTree right() {
         return getChildren().get(1);
+    }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        StringBuilder sb = new StringBuilder();
+        sb.append(left().toString());
+        sb.append(" / ");
+        sb.append(right().toString());
+        return sb.toString();
     }
 }
 
@@ -105,6 +136,16 @@ class SequenceStmnt extends ASTList {
 
     private ASTree right() {
         return getChildren().get(1);
+    }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        StringBuilder sb = new StringBuilder();
+        sb.append(left().toString());
+        sb.append(" ");
+        sb.append(right().toString());
+        return sb.toString();
     }
 }
 
@@ -143,5 +184,33 @@ class PrimaryStmnt extends ASTList {
         }
 
         return null; // 呼ばれない
+    }
+
+    @Override
+    public String toString() {
+
+        // TODO Auto-generated method stub
+        StringBuilder sb = new StringBuilder();
+        if (modifire == Modifire.question) {
+            sb.append("Opt(");
+        } else if (modifire == Modifire.asterisk) {
+            sb.append("Rep0(");
+        } else if (modifire == Modifire.plus) {
+            sb.append("Rep1(");
+        } else if (modifire == Modifire.exclamation) {
+            sb.append("Not(");
+        } else if (modifire == Modifire.amplifire) {
+            sb.append("And(");
+        } else if (modifire == Modifire.none) {
+        } else {
+            System.exit(-1); // 不明なenum値
+        }
+
+        sb.append(getChild().toString());
+
+        if (modifire != Modifire.none)
+            sb.append(")");
+
+        return sb.toString();
     }
 }

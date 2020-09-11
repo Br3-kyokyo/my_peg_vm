@@ -20,6 +20,12 @@ class StringStmnt extends ASTLeaf {
         return PiFunctions.String(value);
     }
 
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return "\"" + value + "\"";
+    }
+
 }
 
 class CharStmnt extends ASTLeaf {
@@ -33,6 +39,12 @@ class CharStmnt extends ASTLeaf {
     @Override
     public OpList eval() {
         return PiFunctions.Char(value);
+    }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return "'" + value + "'";
     }
 
 }
@@ -79,6 +91,12 @@ class IdentifireStmnt extends ASTLeaf {
     public OpList eval() {
         return PiFunctions.NT(name);
     }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return name;
+    }
 }
 
 class EmptyStmnt extends ASTLeaf {
@@ -91,6 +109,12 @@ class EmptyStmnt extends ASTLeaf {
     public OpList eval() {
         return new OpList(); // 空
     }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return "emp";
+    }
 }
 
 class DotStmnt extends ASTLeaf {
@@ -101,5 +125,11 @@ class DotStmnt extends ASTLeaf {
     @Override
     public OpList eval() {
         return PiFunctions.Any();
+    }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return ".";
     }
 }
