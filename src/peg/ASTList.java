@@ -31,18 +31,18 @@ class GrammerStmnt extends ASTList {
         oplist.addOperand(1);
         oplist.addOpcode(Opcode.OPCODE_END);
         for (ASTree tree : getChildren()) {
-            DifinitionStmnt dif = (DifinitionStmnt) tree;
-            OpList.NTaddressMap.put(dif.getIdentifire().name, oplist.size());
-            oplist.addOpblock(tree.eval());
+            RuleStmnt dif = (RuleStmnt) tree;
+            OpList.NTaddressMap.put(dif.getLeft().name, oplist.size());
+            oplist.addOpblock(dif.eval());
         }
         oplist = PiFunctions.ReplaceCallNtAddr(oplist);
         return oplist;
     }
 }
 
-class DifinitionStmnt extends ASTList {
+class RuleStmnt extends ASTList {
 
-    public DifinitionStmnt(List<ASTree> children) {
+    public RuleStmnt(List<ASTree> children) {
         super(children);
     }
 
@@ -56,8 +56,8 @@ class DifinitionStmnt extends ASTList {
         return oplist;
     }
 
-    public NonTerminationStmnt getIdentifire() {
-        return (NonTerminationStmnt) getChildren().get(0);
+    public IdentifireStmnt getLeft() {
+        return (IdentifireStmnt) getChildren().get(0);
     }
 
     public ASTree getExpression() {
@@ -65,9 +65,9 @@ class DifinitionStmnt extends ASTList {
     }
 }
 
-class PEChoiceStmnt extends ASTList {
+class ChoiceStmnt extends ASTList {
 
-    public PEChoiceStmnt(List<ASTree> children) {
+    public ChoiceStmnt(List<ASTree> children) {
         super(children);
     }
 
@@ -85,9 +85,9 @@ class PEChoiceStmnt extends ASTList {
     }
 }
 
-class PESequenceStmnt extends ASTList {
+class SequenceStmnt extends ASTList {
 
-    public PESequenceStmnt(List<ASTree> children) {
+    public SequenceStmnt(List<ASTree> children) {
         super(children);
     }
 
@@ -108,11 +108,11 @@ class PESequenceStmnt extends ASTList {
     }
 }
 
-class ParsingExpression extends ASTList {
+class PrimaryStmnt extends ASTList {
 
     Modifire modifire;
 
-    public ParsingExpression(ASTree child, Modifire modifire) {
+    public PrimaryStmnt(ASTree child, Modifire modifire) {
         super(Arrays.asList(child));
         this.modifire = modifire;
     }

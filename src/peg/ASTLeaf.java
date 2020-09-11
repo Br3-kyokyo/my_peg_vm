@@ -67,10 +67,10 @@ class BracketStmnt extends ASTLeaf {
     }
 }
 
-class NonTerminationStmnt extends ASTLeaf {
+class IdentifireStmnt extends ASTLeaf {
     String name;
 
-    public NonTerminationStmnt(final String name) {
+    public IdentifireStmnt(final String name) {
         super();
         this.name = name;
     }

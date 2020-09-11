@@ -65,7 +65,7 @@ public class VMCodeGenerator {
         ASTree id = Identifire();
         LEFTARROW();
         ASTree expr = Expression();
-        return new DifinitionStmnt(Arrays.asList(id, expr));
+        return new RuleStmnt(Arrays.asList(id, expr));
     }
 
     private ASTree Expression() throws SyntaxError {
@@ -76,7 +76,7 @@ public class VMCodeGenerator {
             return left;
         }
         ASTree right = Expression();
-        return new PEChoiceStmnt(Arrays.asList(left, right));
+        return new ChoiceStmnt(Arrays.asList(left, right));
     }
 
     private ASTree Sequence() throws SyntaxError {
@@ -90,7 +90,7 @@ public class VMCodeGenerator {
 
         try {
             ASTree right = Sequence();
-            return new PESequenceStmnt(Arrays.asList(left, right));
+            return new SequenceStmnt(Arrays.asList(left, right));
         } catch (SyntaxError e) {
             return left;
         }
@@ -111,15 +111,15 @@ public class VMCodeGenerator {
         } catch (SyntaxError e) {
         }
 
-        ParsingExpression pe = Suffix();
+        PrimaryStmnt pe = Suffix();
         if (mod != null)
             pe.modifire = mod;
 
         return pe;
     }
 
-    private ParsingExpression Suffix() throws SyntaxError {
-        ParsingExpression pe = Primary();
+    private PrimaryStmnt Suffix() throws SyntaxError {
+        PrimaryStmnt pe = Primary();
         try {
             QUESTION();
             pe.modifire = Modifire.question;
@@ -145,7 +145,7 @@ public class VMCodeGenerator {
 
     }
 
-    private ParsingExpression Primary() throws SyntaxError {
+    private PrimaryStmnt Primary() throws SyntaxError {
         int bip = ip;
 
         try {
@@ -157,7 +157,7 @@ public class VMCodeGenerator {
                 LEFTARROW();
             } catch (SyntaxError e) {
                 ip = bpredicateip;
-                return new ParsingExpression(identifire, Modifire.none);
+                return new PrimaryStmnt(identifire, Modifire.none);
             }
             throw new SyntaxError(ip);
         } catch (SyntaxError e) {
@@ -168,34 +168,34 @@ public class VMCodeGenerator {
             OPEN();
             ASTree tree = Expression();
             CLOSE();
-            return new ParsingExpression(tree, Modifire.none);
+            return new PrimaryStmnt(tree, Modifire.none);
         } catch (SyntaxError e) {
             ip = bip;
         }
 
         try {
             ASTree cliteral = CharLiteral();
-            return new ParsingExpression(cliteral, Modifire.none);
+            return new PrimaryStmnt(cliteral, Modifire.none);
         } catch (SyntaxError e) {
             ip = bip;
         }
 
         try {
             StringStmnt sliteral = StringLiteral();
-            return new ParsingExpression(sliteral, Modifire.none);
+            return new PrimaryStmnt(sliteral, Modifire.none);
         } catch (SyntaxError e) {
             ip = bip;
         }
 
         try {
             BracketStmnt range = Class();
-            return new ParsingExpression(range, Modifire.none);
+            return new PrimaryStmnt(range, Modifire.none);
         } catch (SyntaxError e) {
             ip = bip;
         }
 
         ASTree dot = DOT();
-        return new ParsingExpression(dot, Modifire.none);
+        return new PrimaryStmnt(dot, Modifire.none);
 
     }
 
@@ -209,7 +209,7 @@ public class VMCodeGenerator {
         } catch (SyntaxError e) {
         }
         Spacing();
-        return new NonTerminationStmnt(sb.toString());
+        return new IdentifireStmnt(sb.toString());
     }
 
     private char IdentStart() throws SyntaxError {
