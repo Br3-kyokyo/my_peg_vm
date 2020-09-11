@@ -14,6 +14,8 @@ public class Opcode extends Op {
     public static final byte OPCODE_FAIL = 0x07;
     public static final byte OPCODE_END = 0x08;
 
+    public static final byte OPCODE_LOG = 0x09;
+
     public static final int BYTES = 1;
 
     public static String getName(byte b) {

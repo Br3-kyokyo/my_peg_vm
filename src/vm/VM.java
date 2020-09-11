@@ -61,6 +61,8 @@ public class VM {
                 } else if (opcode == Opcode.OPCODE_END) {
                     inst_end();
                     return true;
+                } else if (opcode == Opcode.OPCODE_LOG) {
+                    System.out.print(readCharOperand());
                 } else {
                     throw new UnknownInstructionException(pc);
                 }

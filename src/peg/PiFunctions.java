@@ -31,6 +31,8 @@ public class PiFunctions {
     public static OpList NT(String name) {
         var list = new OpList();
 
+        // list.addOpblock(LogOp(name));
+
         list.addOpcode(Opcode.OPCODE_CALL);
         list.NTtempOpcodeMap.put(list.size(), name);
         list.addOperand(0); // tmp
@@ -87,6 +89,8 @@ public class PiFunctions {
 
     public static OpList Repetation0(OpList e) {
         var list = new OpList();
+
+        // list.addOpblock(LogOp("Rep0"));
 
         list.addOpcode(Opcode.OPCODE_CHOICE);
         list.addOperand(e.size() + Opcode.BYTES + IntOperand.BYTES);
@@ -145,5 +149,18 @@ public class PiFunctions {
         // c t
 
         return oplist;
+    }
+
+    private static OpList LogOp(String log) {
+        var list = new OpList();
+
+        for (char c : log.toCharArray()) {
+            list.addOpcode(Opcode.OPCODE_LOG);
+            list.addOperand(c);
+        }
+        list.addOpcode(Opcode.OPCODE_LOG);
+        list.addOperand('\n');
+
+        return list;
     }
 }
