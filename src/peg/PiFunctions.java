@@ -1,7 +1,7 @@
 package peg;
 
 import java.util.List;
-import consts.OpCodes;
+import consts.*;
 
 public class PiFunctions {
 
@@ -11,10 +11,10 @@ public class PiFunctions {
     public static OpList Choice(OpList e1, OpList e2) {
         var list = new OpList();
 
-        list.addOpcode(OpCodes.OPCODE_CHOICE);
-        list.addOperand(e1.size() + 5); // commit命令:5バイト
+        list.addOpcode(Opcode.OPCODE_CHOICE);
+        list.addOperand(e1.size() + Opcode.BYTES + IntOperand.BYTES); // commit命令:5バイト
         list.addOpblock(e1);
-        list.addOpcode(OpCodes.OPCODE_COMMIT);
+        list.addOpcode(Opcode.OPCODE_COMMIT);
         list.addOperand(e2.size());
         list.addOpblock(e2);
 
@@ -31,7 +31,9 @@ public class PiFunctions {
     public static OpList NT(String name) {
         var list = new OpList();
 
-        list.addOpcode(OpCodes.OPCODE_CALL);
+        // list.addOpblock(LogOp(name));
+
+        list.addOpcode(Opcode.OPCODE_CALL);
         list.NTtempOpcodeMap.put(list.size(), name);
         list.addOperand(0); // tmp
 
@@ -41,7 +43,7 @@ public class PiFunctions {
     public static OpList Char(char c) {
         var list = new OpList();
 
-        list.addOpcode(OpCodes.OPCODE_CHAR);
+        list.addOpcode(Opcode.OPCODE_CHAR);
         list.addOperand(c);
 
         return list;
@@ -69,17 +71,17 @@ public class PiFunctions {
 
     public static OpList Any() {
         var list = new OpList();
-        list.addOpcode(OpCodes.OPCODE_ANY);
+        list.addOpcode(Opcode.OPCODE_ANY);
         return list;
     }
 
     public static OpList Option(OpList e) {
         var list = new OpList();
 
-        list.addOpcode(OpCodes.OPCODE_CHOICE);
-        list.addOperand(e.size() + 5);
+        list.addOpcode(Opcode.OPCODE_CHOICE);
+        list.addOperand(e.size() + Opcode.BYTES + IntOperand.BYTES);
         list.addOpblock(e);
-        list.addOpcode(OpCodes.OPCODE_COMMIT);
+        list.addOpcode(Opcode.OPCODE_COMMIT);
         list.addOperand(0);
 
         return list;
@@ -88,11 +90,13 @@ public class PiFunctions {
     public static OpList Repetation0(OpList e) {
         var list = new OpList();
 
-        list.addOpcode(OpCodes.OPCODE_CHOICE);
-        list.addOperand(e.size() + 5);
+        // list.addOpblock(LogOp("Rep0"));
+
+        list.addOpcode(Opcode.OPCODE_CHOICE);
+        list.addOperand(e.size() + Opcode.BYTES + IntOperand.BYTES);
         list.addOpblock(e);
-        list.addOpcode(OpCodes.OPCODE_COMMIT);
-        list.addOperand(-(e.size() + 5 + 4 + 1));
+        list.addOpcode(Opcode.OPCODE_COMMIT);
+        list.addOperand(-(IntOperand.BYTES + Opcode.BYTES + e.size() + Opcode.BYTES + IntOperand.BYTES));
         return list;
 
     }
@@ -106,12 +110,12 @@ public class PiFunctions {
 
     public static OpList NotPredicate(OpList e) {
         var list = new OpList();
-        list.addOpcode(OpCodes.OPCODE_CHOICE);
-        list.addOperand(e.size() + 5 + 1);
+        list.addOpcode(Opcode.OPCODE_CHOICE);
+        list.addOperand(e.size() + Opcode.BYTES + IntOperand.BYTES + Opcode.BYTES);
         list.addOpblock(e);
-        list.addOpcode(OpCodes.OPCODE_COMMIT);
-        list.addOperand(1);
-        list.addOpcode(OpCodes.OPCODE_FAIL);
+        list.addOpcode(Opcode.OPCODE_COMMIT);
+        list.addOperand(0);
+        list.addOpcode(Opcode.OPCODE_FAIL);
         return list;
     }
 
@@ -131,12 +135,32 @@ public class PiFunctions {
                 oplist.remove(replaceTargetAddr);
 
             // 当該アドレスを埋める
-            oplist.addOperand(replaceTargetAddr, OpList.NTaddressMap.get(nt) - (replaceTargetAddr + 4));
+            try {
+                int offset = OpList.NTaddressMap.get(nt) - (replaceTargetAddr + 4);
+                oplist.addOperand(replaceTargetAddr, offset);
+            } catch (NullPointerException e) {
+                System.out.println("存在しない非終端記号を参照しています。:" + nt);
+                e.printStackTrace();
+                System.exit(-1);
+            }
         }
 
         // 0 1 2 3 4 5 6 7
         // c t
 
         return oplist;
+    }
+
+    private static OpList LogOp(String log) {
+        var list = new OpList();
+
+        for (char c : log.toCharArray()) {
+            list.addOpcode(Opcode.OPCODE_LOG);
+            list.addOperand(c);
+        }
+        list.addOpcode(Opcode.OPCODE_LOG);
+        list.addOperand('\n');
+
+        return list;
     }
 }

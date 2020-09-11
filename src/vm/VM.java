@@ -2,56 +2,82 @@ package vm;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
-import consts.OpCodes;
+import consts.Opcode;
 
 //構文解析に特化した仮想マシン
 public class VM {
-    int ip = 0; // 入力の解析位置(input parsing position)
-    int pc = 0; // プログラムカウンタ(program counter)
-    Deque<Entry> stack = new ArrayDeque<Entry>(); // Stack
 
     private byte[] program;
     private char[] inputString;
+    private List<String> inputLines;
 
-    public VM(byte[] program, char[] inputString) {
+    private int ip = 0; // 入力の解析位置(input parsing position)
+    private int pc = 0; // プログラムカウンタ(program counter)
+    private Deque<Entry> stack = new ArrayDeque<Entry>(); // Stack
+
+    private TreeMap<Integer, Integer> ipLinenumMap = new TreeMap<Integer, Integer>();
+
+    Failure farthestFailure = new Failure(0, ' ', ' ');
+
+    public VM(byte[] program, List<String> input) {
         this.program = program;
-        this.inputString = inputString;
-    }
+        this.inputLines = input;
+        this.inputString = input.stream().collect(Collectors.joining(System.getProperty("line.separator")))
+                .toCharArray();
 
-    public boolean exec() throws ParseException {
-        while (true) {
-            byte opcode = program[pc++];
-            if (opcode == OpCodes.OPCODE_CHAR) {
-                inst_char();
-            } else if (opcode == OpCodes.OPCODE_ANY) {
-                inst_any();
-            } else if (opcode == OpCodes.OPCODE_CHOICE) {
-                inst_choice();
-            } else if (opcode == OpCodes.OPCODE_JUMP) {
-                inst_jump();
-            } else if (opcode == OpCodes.OPCODE_CALL) {
-                inst_call();
-            } else if (opcode == OpCodes.OPCODE_RETURN) {
-                inst_return();
-            } else if (opcode == OpCodes.OPCODE_COMMIT) {
-                inst_commit();
-            } else if (opcode == OpCodes.OPCODE_FAIL) {
-                inst_fail();
-            } else if (opcode == OpCodes.OPCODE_END) {
-                return inst_end();
-            } else {
-                throw new ParseException("unknown instruction");
-            }
+        int lengthsum = 0;
+        for (int i = 0; i < input.size(); i++) {
+            ipLinenumMap.put(lengthsum, i);
+            lengthsum = lengthsum + (input.get(i).length() + 1); // +1は改行文字分
         }
     }
 
-    private boolean inst_end() {
-        if (inputString.length == ip) {
-            return true;
-        } else {
-            System.out.println("syntax error: " + ip);
+    // 構文解析に成功した場合true、失敗した場合falseを返す。
+    public boolean exec() throws UnknownInstructionException {
+        try {
+            while (true) {
+                // System.out.println(ip + ":" + Integer.toHexString(pc));
+                byte opcode = program[pc++];
+                if (opcode == Opcode.OPCODE_CHAR) {
+                    inst_char();
+                } else if (opcode == Opcode.OPCODE_ANY) {
+                    inst_any();
+                } else if (opcode == Opcode.OPCODE_CHOICE) {
+                    inst_choice();
+                } else if (opcode == Opcode.OPCODE_JUMP) {
+                    inst_jump();
+                } else if (opcode == Opcode.OPCODE_CALL) {
+                    inst_call();
+                } else if (opcode == Opcode.OPCODE_RETURN) {
+                    inst_return();
+                } else if (opcode == Opcode.OPCODE_COMMIT) {
+                    inst_commit();
+                } else if (opcode == Opcode.OPCODE_FAIL) {
+                    inst_fail();
+                } else if (opcode == Opcode.OPCODE_END) {
+                    inst_end();
+                    return true;
+                } else if (opcode == Opcode.OPCODE_LOG) {
+                    System.out.print(readCharOperand());
+                } else {
+                    throw new UnknownInstructionException(pc);
+                }
+            }
+        } catch (SyntaxError e) {
+            errorReporting();
             return false;
+        }
+    }
+
+    private void inst_end() throws SyntaxError {
+        if (inputString.length == ip) {
+            return;
+        } else {
+            throw new SyntaxError();
         }
     }
 
@@ -67,8 +93,8 @@ public class VM {
     }
 
     private void inst_call() {
-        stack.push(new ReturnEntry(pc));
         int addrOffset = readIntOperand();
+        stack.push(new ReturnEntry(pc));
         pc = pc + addrOffset;
     }
 
@@ -82,7 +108,7 @@ public class VM {
         stack.push(new BacktrackEntry(pc + addrOffset, ip));
     }
 
-    private void inst_any() {
+    private void inst_any() throws SyntaxError {
         if (inputString.length == ip) {
             inst_fail();
         } else {
@@ -90,35 +116,86 @@ public class VM {
         }
     }
 
-    private void inst_char() {
+    private void inst_char() throws SyntaxError {
+        if (inputString.length == ip) {
+            inst_fail();
+            return;
+        }
         char c = inputString[ip];
         char operand = readCharOperand();
         if (c == operand)
             ip++;
         else
-            inst_fail();
+            inst_fail(operand, c);
     }
 
-    private void inst_fail() {
+    private void inst_fail(char predicated, char actual) throws SyntaxError {
+        if (this.farthestFailure.ip <= this.ip)
+            this.farthestFailure = new Failure(ip, predicated, actual);
+
+        boolean success = backtrack();
+        if (!success)
+            throw new SyntaxError(predicated, actual);
+    }
+
+    private void inst_fail() throws SyntaxError {
+        boolean success = backtrack();
+        if (!success)
+            throw new SyntaxError();
+    }
+
+    private boolean backtrack() {
+
         while (!stack.isEmpty()) {
             Entry entry = stack.pop();
             if (entry instanceof BacktrackEntry) {
                 BacktrackEntry bentry = (BacktrackEntry) entry;
                 ip = bentry.ip;
                 pc = bentry.pc;
-                return;
+                return true;
             }
         }
-        System.out.println("syntax error: " + ip);
-        System.exit(-1);
+        return false;
+    }
+
+    private void errorReporting() {
+        Failure f = farthestFailure;
+
+        java.util.Map.Entry<Integer, Integer> posLinenum = ipLinenumMap.floorEntry(f.ip);
+        int rowip = posLinenum.getKey();
+        int linenum = posLinenum.getValue();
+
+        int charpos = f.ip - rowip;
+        String row = inputLines.get(linenum);
+
+        System.out.println((linenum + 1) + ":" + charpos + "(" + f.ip + "): syntax error");
+        System.out.println(row);
+        for (int i = 0; i < (row.length() + 1); i++) {
+            if (i == charpos)
+                System.out.print("^");
+            else
+                System.out.print(" ");
+        }
+
+        System.out.println();
+        System.out.println("predicated: " + "'" + f.predicated + "'");
+        System.out.println("actual: " + "'" + f.actual + "'");
+
     }
 
     private char readCharOperand() {
-        return (char) ((program[pc++]) | (program[pc++] << 8));
+        int mask = 0x00ff;
+        return (char) ((program[pc++] & mask) | ((program[pc++] & mask) << 8));
     }
 
     private int readIntOperand() {
-        return (program[pc++]) | (program[pc++] << 8) | (program[pc++] << 16) | (program[pc++] << 24);
+
+        int mask = 0x000000ff;
+        int operand = ((program[pc + 3] & mask) << 24) | ((program[pc + 2] & mask) << 16)
+                | ((program[pc + 1] & mask) << 8) | (program[pc] & mask);
+        pc = pc + 4;
+
+        return operand;
     }
 }
 
@@ -145,3 +222,20 @@ class ReturnEntry extends Entry {
         this.pc = pc;
     }
 }
+
+class Failure {
+
+    int ip;
+    char predicated;
+    char actual;
+
+    public Failure(int ip, char predicated, char actual) {
+        this.ip = ip;
+        this.predicated = predicated;
+        this.actual = actual;
+    }
+}
+
+// class CharFailure extends Failure
+// class NotFailure extends Failure
+// class AndFailure extends Failure
