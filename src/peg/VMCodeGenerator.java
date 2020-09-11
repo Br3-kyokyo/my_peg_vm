@@ -81,13 +81,7 @@ public class VMCodeGenerator {
     }
 
     private ASTree Sequence() throws SyntaxError {
-        ASTree left = null;
-
-        try {
-            left = Prefix();
-        } catch (SyntaxError e) {
-            return new EmptyStmnt();
-        }
+        ASTree left = Prefix();
 
         try {
             ASTree right = Sequence();
