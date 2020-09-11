@@ -21,7 +21,7 @@ public class VM {
 
     private TreeMap<Integer, Integer> ipLinenumMap = new TreeMap<Integer, Integer>();
 
-    int farthestFailedPoint = 0;
+    Failure farthestFailure = new Failure(0, ' ', ' ');
 
     public VM(byte[] program, List<String> input) {
         this.program = program;
@@ -126,13 +126,25 @@ public class VM {
         if (c == operand)
             ip++;
         else
-            inst_fail();
+            inst_fail(operand, c);
+    }
+
+    private void inst_fail(char predicated, char actual) throws SyntaxError {
+        if (this.farthestFailure.ip <= this.ip)
+            this.farthestFailure = new Failure(ip, predicated, actual);
+
+        boolean success = backtrack();
+        if (!success)
+            throw new SyntaxError(predicated, actual);
     }
 
     private void inst_fail() throws SyntaxError {
+        boolean success = backtrack();
+        if (!success)
+            throw new SyntaxError();
+    }
 
-        if (this.farthestFailedPoint < this.ip)
-            this.farthestFailedPoint = this.ip;
+    private boolean backtrack() {
 
         while (!stack.isEmpty()) {
             Entry entry = stack.pop();
@@ -140,23 +152,23 @@ public class VM {
                 BacktrackEntry bentry = (BacktrackEntry) entry;
                 ip = bentry.ip;
                 pc = bentry.pc;
-                return;
+                return true;
             }
         }
-        throw new SyntaxError();
+        return false;
     }
 
     private void errorReporting() {
-        int fp = farthestFailedPoint;
+        Failure f = farthestFailure;
 
-        java.util.Map.Entry<Integer, Integer> posLinenum = ipLinenumMap.floorEntry(fp);
+        java.util.Map.Entry<Integer, Integer> posLinenum = ipLinenumMap.floorEntry(f.ip);
         int rowip = posLinenum.getKey();
         int linenum = posLinenum.getValue();
 
-        int charpos = fp - rowip;
+        int charpos = f.ip - rowip;
         String row = inputLines.get(linenum);
 
-        System.out.println((linenum + 1) + ":" + charpos + ": syntax error");
+        System.out.println((linenum + 1) + ":" + charpos + "(" + f.ip + "): syntax error");
         System.out.println(row);
         for (int i = 0; i < (row.length() + 1); i++) {
             if (i == charpos)
@@ -164,6 +176,10 @@ public class VM {
             else
                 System.out.print(" ");
         }
+
+        System.out.println();
+        System.out.println("predicated: " + "'" + f.predicated + "'");
+        System.out.println("actual: " + "'" + f.actual + "'");
 
     }
 
@@ -206,3 +222,20 @@ class ReturnEntry extends Entry {
         this.pc = pc;
     }
 }
+
+class Failure {
+
+    int ip;
+    char predicated;
+    char actual;
+
+    public Failure(int ip, char predicated, char actual) {
+        this.ip = ip;
+        this.predicated = predicated;
+        this.actual = actual;
+    }
+}
+
+// class CharFailure extends Failure
+// class NotFailure extends Failure
+// class AndFailure extends Failure
