@@ -1,0 +1,101 @@
+POSTFIX <- ’(’ ’postfix’ NUM COMMAND* ’)’
+COMMAND <- NUM / RESERVED / ’(’ COMMAND+ ’)’
+NUM <- [0-9]+
+
+
+PEは、choiceか、seq?　’(’ COMMAND+ ’)’ はseq 
+一つ一つの塊を、Term(項)とする。
+termをchoiceする
+
+termは、丸括弧で囲われた塊か、角括弧で囲まれた文字列か、空白を挟まない一つづきの文字列か、クオーテーションで囲まれた文字列。
+これらには、?, *, +, !, &の接頭辞、接尾辞がつく。
+
+字句解析する？
+
+
+先読み記号や？記号などは、単体についているか、括弧の直前についている
+
+
+
+
+S <- &( A !’b’ ) ’a’+ B !. 
+A <- ’a’ A? ’b’
+B <- ’b’ B? ’c’
+
+\&|\(|\)|\[|\]\+|\*|\!|\?|\.|\-|[0-9]+|([a-zA-Z]+)|\"[a-zA-z]+\"
+
+POSTFIX <- ’(’ ’postfix’ NUM COMMAND* ’)’
+COMMAND <- NUM / ’(’ COMMAND+ ’)’
+NUM <- [0-9]+
+
+
+POSTFIX <- '(' "postfix" NUM COMMAND* ')'
+COMMAND <- NUM / '(' COMMAND+ ')'
+NUM <- [0-9]+
+
+POSTFIX <- SPC* '(' SPC* "postfix" SPC+ NUM SPC+ COMMAND* SPC+ ')'
+COMMAND <- NUM / '(' SPC* COMMAND+ SPC* ')'
+NUM <- [0-9]+
+SPC <- ' '
+
+(postfix 0 10 (swap 2 mul sub) 1 swap exec)
+
+
+-- OK
+
+POSTFIX <- '(' COMMAND* ')'
+COMMAND <- NUM SPC / '(' COMMAND+ ')' SPC
+NUM <- '0'
+SPC <- ' '
+
+((0 0 0 0 ) 0 0 0 )
+
+--
+
+--- OK
+
+postfix <- ws '(' ws "postfix" ws num ws command* ws ')' ws
+command <- num ws / reserved ws / '(' command+ ')' ws
+num <- [0-9]+
+reserved <- "add" / "mul" / "sub" / "div" / "exec" / "swap"
+ws <- ( '\x09' / '\x0a' / '\x0d' / '\x20' ws )?
+
+(postfix 0 10 (swap 2 mul sub) 1 swap exec)
+
+---
+ちょっと文法を間違えるだけで無限ループが発生したりする
+これはなんとかしたい
+
+どうする？
+無限ループが発生しそうなところにはシンタックスハイライトを…
+文法が間違っているところにもシンタックスハイライトをやりたい…
+さ
+
+--
+
+論文のjsonPEGがめちゃくちゃ間違っている気がする
+
+
+
+---
+
+解析が失敗したときにそれがどこの文法規則で失敗したのか出力したい
+callでリターンエントリを積む
+returnでリターンエントリをpopしてそこのpcに飛ぶ
+文法規則が成功した場合はreturnエントリがpopされる
+callでリターンエントリを積むときに非終端記号の文字も積めばいいのでは？
+そのためには、call命令に非終端記号の文字も含む必要がある。
+
+
+LL(1)文法などの予言的再帰下降分析であれば、エラーが起こったときにどこでエラーが起こったのかというのが特定することができるが
+バックトラックのある解析においては、どこがエラー箇所なのか一意に決めることができないのでは？
+
+
+最後にバックトラックが起こった場所をエラー箇所とする？
+
+
+--- 20200909
+
+vmでエラーが起こった時に、どの規則でエラーが起こったのかわからない
+賢いエラーを出したいがどうする？
+期待される値を提示したいのだが難しい

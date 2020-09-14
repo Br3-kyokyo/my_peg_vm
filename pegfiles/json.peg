@@ -1,0 +1,21 @@
+Element <- Ws Value Ws
+Value <- Object / Array / String / Number / "true" / "false" / "null"
+Object <- '{' Ws '}' / '{' Members '}'
+Members <- Member ',' Members / Member
+Member <- Ws String Ws ':' Element
+Array <- '[' Ws ']' / '[' Elements ']'
+Elements <- Element ',' Elements / Element
+String <- '"' Characters '"'
+Characters <- Character*
+Character <- ( ! ( '"' / '\\' ) [\x20-\x7f] ) / ( '\\' Escape )
+Escape <- ["\\/bnrt] / 'u' Hex Hex Hex Hex
+Hex <- Digit / [A-Fa-f]
+Number <- Int Frac Exp
+Int <- ( '-' )? ( Onenine Digits / Digit )
+Digits <- Digit Digits / Digit
+Digit <- '0' / Onenine
+Onenine <- [1-9]
+Frac <- ( . Digits )?
+Exp <- (('E' /'e' ) Sign Digits)?
+Sign <- ('+' /'-' )?
+Ws <- ('\x09' / '\x0a' / '\x0d' / '\x20')*

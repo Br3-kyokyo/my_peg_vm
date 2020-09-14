@@ -1,0 +1,5 @@
+postfix <- ws '(' ws "postfix" ws num ws command* ws ')' ws
+command <- num / reserved / '(' command+ ')'
+num <- [0-9]+
+reserved <- "add" / "mul" / "sub" / "div" / "exec" / "swap"
+ws <- ( '\x09' / '\x0a' / '\x0d' / '\x20' ws )?
