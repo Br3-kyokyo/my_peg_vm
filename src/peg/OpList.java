@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import consts.Opcode;
+
 public class OpList {
 
     private ArrayList<Byte> list = new ArrayList<Byte>();
@@ -43,17 +45,16 @@ public class OpList {
 
     public boolean addOpblock(OpList bList) {
 
+        // 非終端記号呼び出しの番地情報を揃える
         for (var addrntmap : bList.NTtempOpcodeMap.entrySet())
             this.NTtempOpcodeMap.put(this.list.size() + addrntmap.getKey(), addrntmap.getValue());
 
         // blist: 0 1 2 3
         // this: 0 1 2 3 4 5 6 7
-
         // 2が該当する位置とする。call命令が入っている。
         // この場合、元のマップでは2にntがマップされている
         // 計算後は
         // 8+2 = 10
-
         // 0 1 2 3 4 5 6 7 0 1 2 3
 
         return list.addAll(bList.list);
@@ -67,12 +68,81 @@ public class OpList {
         return list.remove(index);
     }
 
-    public byte[] toArray() {
+    public byte[] toBinary() {
         byte[] bytes = new byte[list.size()];
 
         for (int i = 0; i < list.size(); i++)
             bytes[i] = list.get(i);
 
         return bytes;
+    }
+
+    // バイト列を文字列に変換
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+
+        int i = 0;
+        while (i < list.size()) {
+            sb.append(Integer.toHexString(i));
+            sb.append(": ");
+            switch (list.get(i++)) {
+                case Opcode.OPCODE_CHAR:
+                    sb.append("char ");
+                    sb.append(readCharOperand(i));
+                    i = i + 2;
+                    sb.append("\n");
+                    break;
+                case Opcode.OPCODE_ANY:
+                    sb.append("any\n");
+                    break;
+                case Opcode.OPCODE_CHOICE:
+                    sb.append("choise ");
+                    sb.append(readIntOperand(i));
+                    i = i + 4;
+                    sb.append("\n");
+                    break;
+                case Opcode.OPCODE_JUMP:
+                    sb.append("jump ");
+                    sb.append(readIntOperand(i));
+                    i = i + 4;
+                    sb.append("\n");
+                    break;
+                case Opcode.OPCODE_CALL:
+                    sb.append("call ");
+                    sb.append(readIntOperand(i));
+                    i = i + 4;
+                    sb.append("\n");
+                    break;
+                case Opcode.OPCODE_RETURN:
+                    sb.append("return\n");
+                    break;
+                case Opcode.OPCODE_COMMIT:
+                    sb.append("commit ");
+                    sb.append(readIntOperand(i));
+                    i = i + 4;
+                    sb.append("\n");
+                    break;
+                case Opcode.OPCODE_FAIL:
+                    sb.append("fail\n");
+                    break;
+                case Opcode.OPCODE_END:
+                    sb.append("end\n");
+                    break;
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private char readCharOperand(int i) {
+        int mask = 0x00ff;
+        return (char) ((list.get(i) & mask) | ((list.get(i + 1) & mask) << 8));
+    }
+
+    private int readIntOperand(int i) {
+        int mask = 0x000000ff;
+        int operand = ((list.get(i + 3) & mask) << 24) | ((list.get(i + 2) & mask) << 16)
+                | ((list.get(i + 1) & mask) << 8) | (list.get(i) & mask);
+        return operand;
     }
 }

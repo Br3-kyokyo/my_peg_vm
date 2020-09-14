@@ -20,6 +20,12 @@ class StringStmnt extends ASTLeaf {
         return PiFunctions.String(value);
     }
 
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return "\"" + value + "\"";
+    }
+
 }
 
 class CharStmnt extends ASTLeaf {
@@ -35,22 +41,28 @@ class CharStmnt extends ASTLeaf {
         return PiFunctions.Char(value);
     }
 
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return "'" + value + "'";
+    }
+
 }
 
 class BracketStmnt extends ASTLeaf {
-    private final List<Tuple<Character, Character>> body;
+    private final List<List<Character>> tuplelist; // タプルのリスト(内側のリストは要素数二つに限る)
 
-    public BracketStmnt(final List<Tuple<Character, Character>> body) {
+    public BracketStmnt(final List<List<Character>> tuplelist) {
         super();
-        this.body = body;
+        this.tuplelist = tuplelist;
     }
 
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
         sb.append("[");
-        for (final var pair : body)
-            sb.append("(" + pair.first + "," + pair.first + ")");
+        for (final var pair : tuplelist)
+            sb.append("(" + pair.get(0) + "," + pair.get(1) + ")");
         sb.append("]");
         return sb.toString();
     }
@@ -59,18 +71,18 @@ class BracketStmnt extends ASTLeaf {
     public OpList eval() throws RuntimeException {
 
         var charlist = new ArrayList<Character>();
-        for (var tuple : body)
-            for (char c = tuple.first; c <= tuple.second; c++)
+        for (var tuple : tuplelist)
+            for (char c = tuple.get(0); c <= tuple.get(1); c++)
                 charlist.add(c);
 
         return PiFunctions.Range(charlist);
     }
 }
 
-class NonTerminationStmnt extends ASTLeaf {
+class IdentifireStmnt extends ASTLeaf {
     String name;
 
-    public NonTerminationStmnt(final String name) {
+    public IdentifireStmnt(final String name) {
         super();
         this.name = name;
     }
@@ -78,6 +90,12 @@ class NonTerminationStmnt extends ASTLeaf {
     @Override
     public OpList eval() {
         return PiFunctions.NT(name);
+    }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return name;
     }
 }
 
@@ -91,6 +109,12 @@ class EmptyStmnt extends ASTLeaf {
     public OpList eval() {
         return new OpList(); // 空
     }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return "emp";
+    }
 }
 
 class DotStmnt extends ASTLeaf {
@@ -101,5 +125,11 @@ class DotStmnt extends ASTLeaf {
     @Override
     public OpList eval() {
         return PiFunctions.Any();
+    }
+
+    @Override
+    public String toString() {
+        // TODO Auto-generated method stub
+        return ".";
     }
 }

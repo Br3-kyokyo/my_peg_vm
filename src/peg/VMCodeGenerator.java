@@ -1,195 +1,484 @@
 package peg;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 
-import consts.OpCodes;
-
 public class VMCodeGenerator {
-    // PEG規則を仮想マシンコードに変換する。
 
-    private static Lexer lexer;
+    private int ip; // input position - 行における位置
+    private int lp; // line position - 現在の行番号
+    private String line;
+    private List<String> input;
 
-    // インスタンスの作成を禁止: staticクラス
-    private VMCodeGenerator() {
-    };
+    public VMCodeGenerator(List<String> input) {
+        this.input = input;
+    }
 
-    public static byte[] generate(List<String> pegGrammers) throws ParseException {
+    public OpList generate() {
 
-        // PEG構文木生成
-        // ASTree grammer = Grammer(pegGrammers);
-        List<Rule> rule_list = ruleList(pegGrammers);
+        try {
+            ASTree tree = Grammer();
+            System.out.println(tree.toString());
+            OpList oplist = tree.eval();
+            return oplist;
+        } catch (SyntaxError e) {
+            System.out.println(lp + ":" + ip + ": SyntaxError");
+            System.out.println(input.get(lp));
 
-        // 構文木から仮想マシンコードを生成
-        var oplist = new OpList();
-        oplist.addOpcode(OpCodes.OPCODE_CALL);
-        oplist.addOperand(1);
-        oplist.addOpcode(OpCodes.OPCODE_END);
-        for (Rule rule : rule_list) {
-            OpList.NTaddressMap.put(rule.getNt().name, oplist.size());
-            oplist.addOpblock(rule.getBody().eval());
-            oplist.addOpcode(OpCodes.OPCODE_RETURN);
+            for (int i = 0; i < input.size(); i++) {
+                if (i == ip)
+                    System.out.print("^");
+                else
+                    System.out.print(" ");
+            }
+            System.exit(-1);
+        } catch (RuntimeException e) {
+            e.printStackTrace();
+            System.exit(-1);
         }
 
-        // var vmcode = oplist.toArray();
-        // for (int i = 0; i < vmcode.length; i++)
-        // System.out.print(String.format("%02X", vmcode[i]) + " ");
-        // System.out.println();
-
-        oplist = PiFunctions.ReplaceCallNtAddr(oplist);
-
-        return oplist.toArray();
+        return null; // unreachable (なはず…)
     }
 
-    private static List<Rule> ruleList(List<String> pegGrammers) throws ParseException {
+    private ASTree Grammer() throws SyntaxError {
 
-        LinkedList<Rule> grammers = new LinkedList<Rule>();
-        for (String pegGrammer : pegGrammers) {
-            lexer = new Lexer(pegGrammer);
-            grammers.add(rule(pegGrammer));
+        List<ASTree> list = new ArrayList<ASTree>();
+
+        for (lp = 0; lp < input.size(); lp++) {
+            ip = 0;
+            this.line = input.get(lp);
+
+            int bip = ip;
+            try {
+                Spacing();
+                EOL();
+            } catch (SyntaxError e) {
+                ip = bip;
+                list.add(Difinition());
+                EOL();
+            }
         }
-        return grammers;
+        return new GrammerStmnt(list);
     }
 
-    private static Rule rule(String pegGrammer) throws ParseException {
-
-        var leftterm = lexer.read();
-        var leftarrow = lexer.read();
-
-        if (!(leftterm instanceof NTNameToken || leftarrow instanceof LeftArrowToken))
-            throw new ParseException();
-
-        var nt = new RuleNT(leftterm.toString());
-        var rulebody = ParsingExpressionChoice();
-
-        return new Rule(nt, rulebody);
+    private ASTree Difinition() throws SyntaxError {
+        ASTree id = Identifire();
+        LEFTARROW();
+        ASTree expr = Expression();
+        return new RuleStmnt(Arrays.asList(id, expr));
     }
 
-    private static ASTree ParsingExpressionChoice() throws ParseException {
+    private ASTree Expression() throws SyntaxError {
+        ASTree left = Sequence();
+        try {
+            SLASH();
+        } catch (SyntaxError e) {
+            return left;
+        }
+        ASTree right = Expression();
+        return new ChoiceStmnt(Arrays.asList(left, right));
+    }
 
-        var left = ParsingExpressionSeq();
-        if (lexer.peek() instanceof SlashToken) {
-            lexer.read();
-            var right = ParsingExpressionChoice();
-            return new ParsingExpressionChoiceStmnt(Arrays.asList(left, right));
-        } else {
+    private ASTree Sequence() throws SyntaxError {
+        ASTree left = Prefix();
+
+        try {
+            ASTree right = Sequence();
+            return new SequenceStmnt(Arrays.asList(left, right));
+        } catch (SyntaxError e) {
             return left;
         }
     }
 
-    // private static ASTree ParsingExpressionSeq() throws ParseException {
-    // //Seq <- PE*
+    private ASTree Prefix() throws SyntaxError {
+        Modifire mod = null;
 
-    // }
+        try {
+            AND();
+            mod = Modifire.amplifire;
+        } catch (SyntaxError e) {
+        }
 
-    private static ASTree ParsingExpressionSeq() throws ParseException {
-        // ## / / ( hoge fuga / hoge ) / () (fuge) /
-        Token next = lexer.peek();
+        try {
+            NOT();
+            mod = Modifire.exclamation;
+        } catch (SyntaxError e) {
+        }
 
-        if (next instanceof SlashToken || next instanceof RparenToken || next instanceof EOLToken)
+        PrimaryStmnt pe = Suffix();
+        if (mod != null)
+            pe.modifire = mod;
+
+        return pe;
+    }
+
+    private PrimaryStmnt Suffix() throws SyntaxError {
+        PrimaryStmnt pe = Primary();
+        try {
+            QUESTION();
+            pe.modifire = Modifire.question;
+            return pe;
+        } catch (SyntaxError e) {
+        }
+
+        try {
+            STAR();
+            pe.modifire = Modifire.asterisk;
+            return pe;
+        } catch (SyntaxError e) {
+        }
+
+        try {
+            PLUS();
+            pe.modifire = Modifire.plus;
+            return pe;
+        } catch (SyntaxError e) {
+        }
+
+        return pe;
+
+    }
+
+    private PrimaryStmnt Primary() throws SyntaxError {
+        int bip = ip;
+
+        try {
+            ASTree identifire = Identifire();
+
+            int bpredicateip = 0;
+            try {
+                bpredicateip = ip;
+                LEFTARROW();
+            } catch (SyntaxError e) {
+                ip = bpredicateip;
+                return new PrimaryStmnt(identifire, Modifire.none);
+            }
+            throw new SyntaxError(ip);
+        } catch (SyntaxError e) {
+            ip = bip;
+        }
+
+        try {
+            OPEN();
+            ASTree tree = Expression();
+            CLOSE();
+            return new PrimaryStmnt(tree, Modifire.none);
+        } catch (SyntaxError e) {
+            ip = bip;
+        }
+
+        try {
+            ASTree cliteral = CharLiteral();
+            return new PrimaryStmnt(cliteral, Modifire.none);
+        } catch (SyntaxError e) {
+            ip = bip;
+        }
+
+        try {
+            StringStmnt sliteral = StringLiteral();
+            return new PrimaryStmnt(sliteral, Modifire.none);
+        } catch (SyntaxError e) {
+            ip = bip;
+        }
+
+        try {
+            BracketStmnt range = Class();
+            return new PrimaryStmnt(range, Modifire.none);
+        } catch (SyntaxError e) {
+            ip = bip;
+        }
+
+        ASTree dot = DOT();
+        return new PrimaryStmnt(dot, Modifire.none);
+
+    }
+
+    // * Lexical Syntax *//
+    private ASTree Identifire() throws SyntaxError {
+        StringBuilder sb = new StringBuilder();
+        sb.append(IdentStart());
+        try {
+            while (true)
+                sb.append(IdentCont());
+        } catch (SyntaxError e) {
+        }
+        Spacing();
+        return new IdentifireStmnt(sb.toString());
+    }
+
+    private char IdentStart() throws SyntaxError {
+        try {
+            return readRange('a', 'z');
+        } catch (SyntaxError e) {
+            try {
+                return readRange('A', 'Z');
+            } catch (SyntaxError e2) {
+                return readRange('_', '_');
+            }
+        }
+    }
+
+    private char IdentCont() throws SyntaxError {
+        try {
+            return IdentStart();
+        } catch (SyntaxError e) {
+            return readRange('0', '9');
+        }
+    }
+
+    private ASTree CharLiteral() throws SyntaxError {
+        readChar('\'');
+        if (peekChar(0, '\'')) {
+            readChar('\'');
+            Spacing();
             return new EmptyStmnt();
-
-        var left = ParsingExpression();
-        if (!(next instanceof SlashToken || next instanceof RparenToken || next instanceof EOLToken)) {
-            var right = ParsingExpressionSeq();
-            return new ParsingExpressionSeqStmnt(Arrays.asList(left, right));
-        }
-        return left;
-    }
-
-    private static ASTree ParsingExpression() throws ParseException {
-        Token t;
-        ASTree ParsingExpressionBody;
-        Modifire modifire = Modifire.none;
-
-        t = lexer.peek();
-        if (t instanceof ModifireToken)
-            modifire = PREFIX();
-
-        ParsingExpressionBody = ParsingExpressionBody();
-
-        t = lexer.peek();
-        if (t instanceof ModifireToken)
-            modifire = SUFFIX();
-
-        return new ParsingExpression(ParsingExpressionBody, modifire);
-    }
-
-    private static ASTree ParsingExpressionBody() throws ParseException {
-        Token t;
-        ASTree parsingExpressionBody;
-        t = lexer.peek();
-        if (t instanceof LparenToken) {
-            lexer.read();
-            parsingExpressionBody = ParsingExpressionChoice();
-            lexer.read();
-        } else if (t instanceof StringToken) {
-            parsingExpressionBody = String();
-        } else if (t instanceof CharToken) {
-            parsingExpressionBody = Char();
-        } else if (t instanceof LbracketToken) {
-            parsingExpressionBody = Bracket();
-        } else if (t instanceof NTNameToken) {
-            parsingExpressionBody = NT();
-        } else if (t instanceof EmptyToken) {
-            parsingExpressionBody = EMP();
-        } else if (t instanceof DotToken) {
-            parsingExpressionBody = DOT();
         } else {
-            parsingExpressionBody = null;
+            char c = Char();
+            readChar('\'');
+            Spacing();
+            return new CharStmnt(c);
         }
-        return parsingExpressionBody;
     }
 
-    private static Modifire SUFFIX() throws ParseException {
-        ModifireToken mt = (ModifireToken) lexer.read();
-        if (mt.modifire != Modifire.plus && mt.modifire != Modifire.asterisk && mt.modifire != Modifire.question)
-            throw new ParseException("サフィックスは+か*か?です。");
-        return mt.modifire;
+    private StringStmnt StringLiteral() throws SyntaxError {
+        StringBuilder sb = new StringBuilder();
+        readChar('"');
+        while (true) {
+            if (peekChar(0, '"')) {
+                break;
+            } else {
+                sb.append(line.charAt(ip++));
+            }
+        }
+        readChar('"');
+        Spacing();
+        return new StringStmnt(sb.toString());
     }
 
-    private static Modifire PREFIX() throws ParseException {
-        ModifireToken mt = (ModifireToken) lexer.read();
-        if (mt.modifire != Modifire.amplifire && mt.modifire != Modifire.exclamation)
-            throw new ParseException("プレフィックスは&か!です。");
-        return mt.modifire;
+    private BracketStmnt Class() throws SyntaxError {
+        List<List<Character>> tuplelist = new ArrayList<List<Character>>(); // タプルのリスト(内側のリストは要素数2)
+
+        readChar('[');
+        while (true) {
+            if (peekChar(0, ']')) {
+                break;
+            } else {
+                List<Character> ctuple = Range();
+                tuplelist.add(ctuple);
+            }
+        }
+        readChar(']');
+        Spacing();
+
+        return new BracketStmnt(tuplelist);
     }
 
-    private static ASTree DOT() {
-        lexer.read();
+    private List<Character> Range() throws SyntaxError {
+        char c1 = Char();
+        if (peekChar(0, '-')) {
+            readChar('-');
+            char c2 = Char();
+            return Arrays.asList(c1, c2);
+        } else {
+            return Arrays.asList(c1, c1);
+        }
+    }
+
+    private char Char() throws SyntaxError {
+        int bip = ip;
+        try {
+            StringBuilder sb = new StringBuilder();
+            sb.append(readChar('\\'));
+            sb.append(readRange(Arrays.asList('n', 'r', 't', '\'', '"', '[', ']', '\\')));
+            return Functions.unescape_perl_string(sb.toString()).charAt(0);
+        } catch (SyntaxError e) {
+            ip = bip;
+        }
+
+        try {
+            StringBuilder sb = new StringBuilder();
+            sb.append(readChar('\\'));
+            sb.append(readChar('x'));
+            sb.append(readRange('0', 'f'));
+            sb.append(readRange('0', 'f'));
+            return Functions.unescape_perl_string(sb.toString()).charAt(0);
+        } catch (SyntaxError e) {
+            ip = bip;
+        }
+
+        if (peekChar(0, '\\')) {
+            throw new SyntaxError(ip);
+        } else {
+            return line.charAt(ip++);
+        }
+    }
+
+    private void LEFTARROW() throws SyntaxError {
+        readChar('<');
+        readChar('-');
+        Spacing();
+    }
+
+    private void SLASH() throws SyntaxError {
+        readChar('/');
+        Spacing();
+    }
+
+    private void AND() throws SyntaxError {
+        readChar('&');
+        Spacing();
+    }
+
+    private void NOT() throws SyntaxError {
+        readChar('!');
+        Spacing();
+    }
+
+    private void QUESTION() throws SyntaxError {
+        readChar('?');
+        Spacing();
+    }
+
+    private void STAR() throws SyntaxError {
+        readChar('*');
+        Spacing();
+    }
+
+    private void PLUS() throws SyntaxError {
+        readChar('+');
+        Spacing();
+    }
+
+    private void OPEN() throws SyntaxError {
+        readChar('(');
+        Spacing();
+    }
+
+    private void CLOSE() throws SyntaxError {
+        readChar(')');
+        Spacing();
+    }
+
+    private ASTree DOT() throws SyntaxError {
+        readChar('.');
+        Spacing();
         return new DotStmnt();
     }
 
-    private static ASTree EMP() {
-        lexer.read();
-        return new EmptyStmnt();
-    }
+    private void Spacing() {
+        // Method space = thisclass.getMethod("Space");
+        // Method comment = thisclass.getMethod("Comment");
+        // space.
+        // space.set
+        // Or(Arrays.asList(space, comment);
 
-    private static ASTree NT() {
-        return new NonTerminationStmnt(lexer.read().toString());
-    }
-
-    private static ASTree Bracket() {
-        lexer.read();
-        var list = new LinkedList<Tuple<Character, Character>>();
-        while (!(lexer.peek() instanceof RbracketToken)) {
-            char start = lexer.read().toString().charAt(0);
-            lexer.read(); // hyphen
-            char end = lexer.read().toString().charAt(0);
-            list.add(new Tuple<Character, Character>(start, end));
+        try {
+            while (true) {
+                try {
+                    Space();
+                } catch (SyntaxError e) {
+                    Comment();
+                }
+            }
+        } catch (SyntaxError e) {
         }
-        lexer.read(); // rbracket
-        return new BracketStmnt(list);
     }
 
-    private static ASTree Char() {
-        char c = lexer.read().toString().charAt(0);
-        return new CharStmnt(c);
+    private void Comment() throws SyntaxError {
+        readChar('#');
+        while (true) {
+            try {
+                EOL();
+                break;
+            } catch (Exception e) {
+                ip++;
+            }
+        }
     }
 
-    private static ASTree String() {
-        ASTree tree = new StringStmnt(lexer.read().toString());
-        return tree;
+    private void Space() throws SyntaxError {
+        try {
+            readChar(' ');
+        } catch (SyntaxError e) {
+            readChar('\t');
+        }
     }
+
+    private void EOL() throws SyntaxError {
+        // 改行文字がない場合
+        if (line.length() == ip)
+            return;
+
+        // 改行文字がある場合
+        try {
+            readChar('\r');
+            readChar('\n');
+        } catch (SyntaxError e) {
+        }
+        try {
+            readChar('\n');
+        } catch (SyntaxError e2) {
+            readChar('\r');
+        }
+    }
+
+    private void EndOfFile() throws SyntaxError {
+        if (line.length() == ip)
+            return;
+        throw new SyntaxError(ip);
+    }
+
+    private char readRange(char start, char end) throws SyntaxError {
+        if (line.length() == ip)
+            throw new SyntaxError(ip);
+        char ic = line.charAt(ip);
+
+        for (char c = start; c <= end; c++) {
+            if (c == ic) {
+                ip++;
+                return c;
+            }
+        }
+
+        throw new SyntaxError(ip);
+    }
+
+    private char readRange(List<Character> list) throws SyntaxError {
+        if (line.length() == ip)
+            throw new SyntaxError(ip);
+        char ic = line.charAt(ip);
+
+        for (char c : list) {
+            if (c == ic) {
+                ip++;
+                return c;
+            }
+        }
+
+        throw new SyntaxError(ip);
+    }
+
+    private char readChar(char c) throws SyntaxError {
+        if (line.length() == ip)
+            throw new SyntaxError(ip);
+
+        char ic = line.charAt(ip);
+        if (ic == c) {
+            ip++;
+            return c;
+        } else {
+            throw new SyntaxError(ip);
+        }
+    }
+
+    private boolean peekChar(int offset, char c) {
+        char ic = line.charAt(ip + offset);
+        if (ic == c) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
 }

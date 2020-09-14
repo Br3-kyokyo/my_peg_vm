@@ -1,6 +1,7 @@
 *.peg
 *.bin
 *.lang
+*.meta
 
 /build/
 .classpath
