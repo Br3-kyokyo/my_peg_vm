@@ -61,6 +61,8 @@ public class VM {
                 } else if (opcode == Opcode.OPCODE_END) {
                     inst_end();
                     return true;
+                } else if (opcode == Opcode.OPCODE_FAILTWICE) {
+                    inst_failtwice();
                 } else if (opcode == Opcode.OPCODE_LOG) {
                     System.out.print(readCharOperand());
                 } else {
@@ -142,6 +144,11 @@ public class VM {
         boolean success = backtrack();
         if (!success)
             throw new SyntaxError();
+    }
+
+    private void inst_failtwice() throws SyntaxError {
+        stack.pop(); // inst_fail()でも多分大丈夫
+        inst_fail();
     }
 
     private boolean backtrack() {

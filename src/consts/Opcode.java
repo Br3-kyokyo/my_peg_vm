@@ -4,6 +4,7 @@ public class Opcode extends Op {
     private Opcode() {
     }
 
+    // Primary Opration - 主要命令
     public static final byte OPCODE_CHAR = 0x00;
     public static final byte OPCODE_ANY = 0x01;
     public static final byte OPCODE_CHOICE = 0x02;
@@ -14,7 +15,12 @@ public class Opcode extends Op {
     public static final byte OPCODE_FAIL = 0x07;
     public static final byte OPCODE_END = 0x08;
 
-    public static final byte OPCODE_LOG = 0x09;
+    // Optimisation Operation - 最適化命令
+    public static final byte OPCODE_FAILTWICE = 0x09;
+    public static final byte OPCODE_PARTIALCOMMIT = 0x0a;
+    public static final byte OPCODE_BACKCOMMIT = 0x0b;
+
+    public static final byte OPCODE_LOG = 0x0c;
 
     public static final int BYTES = 1;
 

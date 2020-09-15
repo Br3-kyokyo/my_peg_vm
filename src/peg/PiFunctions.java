@@ -111,11 +111,9 @@ public class PiFunctions {
     public static OpList NotPredicate(OpList e) {
         var list = new OpList();
         list.addOpcode(Opcode.OPCODE_CHOICE);
-        list.addOperand(e.size() + Opcode.BYTES + IntOperand.BYTES + Opcode.BYTES);
+        list.addOperand(e.size() + Opcode.BYTES);
         list.addOpblock(e);
-        list.addOpcode(Opcode.OPCODE_COMMIT);
-        list.addOperand(0);
-        list.addOpcode(Opcode.OPCODE_FAIL);
+        list.addOpcode(Opcode.OPCODE_FAILTWICE);
         return list;
     }
 
