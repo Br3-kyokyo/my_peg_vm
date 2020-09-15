@@ -95,8 +95,8 @@ public class PiFunctions {
         list.addOpcode(Opcode.OPCODE_CHOICE);
         list.addOperand(e.size() + Opcode.BYTES + IntOperand.BYTES);
         list.addOpblock(e);
-        list.addOpcode(Opcode.OPCODE_COMMIT);
-        list.addOperand(-(IntOperand.BYTES + Opcode.BYTES + e.size() + Opcode.BYTES + IntOperand.BYTES));
+        list.addOpcode(Opcode.OPCODE_PARTIALCOMMIT);
+        list.addOperand(-(IntOperand.BYTES + Opcode.BYTES + e.size()));
         return list;
 
     }

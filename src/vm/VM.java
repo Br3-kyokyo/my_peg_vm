@@ -63,6 +63,8 @@ public class VM {
                     return true;
                 } else if (opcode == Opcode.OPCODE_FAILTWICE) {
                     inst_failtwice();
+                } else if (opcode == Opcode.OPCODE_PARTIALCOMMIT) {
+                    inst_partialcommit();
                 } else if (opcode == Opcode.OPCODE_LOG) {
                     System.out.print(readCharOperand());
                 } else {
@@ -149,6 +151,14 @@ public class VM {
     private void inst_failtwice() throws SyntaxError {
         stack.pop(); // inst_fail()でも多分大丈夫
         inst_fail();
+    }
+
+    private void inst_partialcommit() throws SyntaxError {
+        int operand = readIntOperand();
+
+        BacktrackEntry e = (BacktrackEntry) stack.pop();
+        stack.push(new BacktrackEntry(e.pc, this.ip));
+        pc = pc + operand;
     }
 
     private boolean backtrack() {
