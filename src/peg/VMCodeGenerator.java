@@ -23,7 +23,7 @@ public class VMCodeGenerator {
             OpList oplist = tree.eval();
             return oplist;
         } catch (SyntaxError e) {
-            System.out.println(lp + ":" + ip + ": SyntaxError");
+            System.out.println(lp + 1 + ":" + ip + ": SyntaxError");
             System.out.println(input.get(lp));
 
             for (int i = 0; i < input.size(); i++) {
@@ -248,7 +248,7 @@ public class VMCodeGenerator {
             if (peekChar(0, '"')) {
                 break;
             } else {
-                sb.append(line.charAt(ip++));
+                sb.append(Char());
             }
         }
         readChar('"');
@@ -290,7 +290,7 @@ public class VMCodeGenerator {
         try {
             StringBuilder sb = new StringBuilder();
             sb.append(readChar('\\'));
-            sb.append(readRange(Arrays.asList('n', 'r', 't', '\'', '"', '[', ']', '\\')));
+            sb.append(readRange(Arrays.asList('f', 'n', 'r', 't', '\'', '"', '[', ']', '\\', '-')));
             return Functions.unescape_perl_string(sb.toString()).charAt(0);
         } catch (SyntaxError e) {
             ip = bip;

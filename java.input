@@ -1,0 +1,113 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+ 
+public class Test {
+    private static final int    CNT  = 1000000;
+    private static final String ODD  = "ODD";
+    private static final String EVEN = "EVEN";
+ 
+    public static void main(String[] args) {
+        String param = args[0];
+        List list;
+        Map result;
+        if ("gen".equals(param)) { // あまり意味のないif文。後の説明用。
+            list = generate();
+        } else if ("genAndCalc".equals(param)) {
+            list = generate();
+            result = sum(list);
+        } else if ("genAndCalcAndOutput".equals(param)) {
+            list = generate();
+            result = sum(list);
+            writeResult(result, "C:\\result\\result.txt");
+        }
+    }
+ 
+    private static List generate() {
+        List ret = new ArrayList();
+        Random random = new Random(1);
+ 
+        for (int i = 0; i < CNT;  i++) {
+            int val = random.nextInt(1000);
+ 
+            // Java 1.4からassert機能が追加される
+            assert val > Integer.MAX_VALUE || val < Integer.MIN_VALUE : "value range error";
+ 
+            ret.add(new Integer(val));
+        }
+ 
+        return ret;
+    }
+ 
+    private static Map sum(List list) {
+        Map map = new HashMap();
+        map.put(ODD , new Integer(0));
+        map.put(EVEN, new Integer(0));
+ 
+        for (int i = 0; i < list.size(); i++) {
+            Integer val = (Integer)list.get(i);
+ 
+            // Java 1.4からassert機能が追加される
+            assert val != null : "value is null";
+ 
+            int intVal = (val).intValue();
+ 
+ 
+            String procType;
+            if (intVal % 2 != 0) {
+                procType = ODD;
+            } else {
+                procType = EVEN;
+ 
+            }
+            int tmp = ( (Integer)map.get(procType)).intValue();
+            tmp += intVal;
+            map.put(procType, new Integer(tmp));
+        }
+ 
+        return map;
+    }
+ 
+    private static void writeResult(Map result, String path) {
+        StringBuffer sb = new StringBuffer();
+        sb.append("[");
+        sb.append(result.get(ODD));
+        sb.append(",");
+        sb.append(result.get(EVEN));
+        sb.append("]");
+        String resultStr = sb.toString();
+ 
+        File File = new File(path);
+        OutputStream os = null;
+        try {
+            os = new FileOutputStream(File);
+            os.write(resultStr.getBytes());
+        } catch (FileNotFoundException e) {
+            System.err.println("file not found");
+            e.printStackTrace();
+        } catch (UnsupportedEncodingException e) { // 本当は発生しない。後の説明用。
+            System.err.println("encoding error");
+            e.printStackTrace();
+        } catch (IOException e) {
+            System.err.println("io error");
+            e.printStackTrace();
+        } finally {
+            if (os != null) {
+                try {
+                    os.close();
+                } catch (IOException e) {
+                    System.err.println("finally error");
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+}

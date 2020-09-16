@@ -21,7 +21,7 @@ public class VM {
 
     private TreeMap<Integer, Integer> ipLinenumMap = new TreeMap<Integer, Integer>();
 
-    Failure farthestFailure = new Failure(0, ' ', ' ');
+    Failure farthestFailure = new Failure(0, 0, ' ', ' ');
 
     public VM(byte[] program, List<String> input) {
         this.program = program;
@@ -40,7 +40,7 @@ public class VM {
     public boolean exec() throws UnknownInstructionException {
         try {
             while (true) {
-                // System.out.println(ip + ":" + Integer.toHexString(pc));
+                System.out.println(ip + ":" + Integer.toHexString(pc));
                 byte opcode = program[pc++];
                 if (opcode == Opcode.OPCODE_CHAR) {
                     inst_char();
@@ -135,7 +135,7 @@ public class VM {
 
     private void inst_fail(char predicated, char actual) throws SyntaxError {
         if (this.farthestFailure.ip <= this.ip)
-            this.farthestFailure = new Failure(ip, predicated, actual);
+            this.farthestFailure = new Failure(pc, ip, predicated, actual);
 
         boolean success = backtrack();
         if (!success)
@@ -185,6 +185,7 @@ public class VM {
         int charpos = f.ip - rowip;
         String row = inputLines.get(linenum);
 
+        System.out.println("pc:" + f.pc);
         System.out.println((linenum + 1) + ":" + charpos + "(" + f.ip + "): syntax error");
         System.out.println(row);
         for (int i = 0; i < (row.length() + 1); i++) {
@@ -242,11 +243,13 @@ class ReturnEntry extends Entry {
 
 class Failure {
 
+    int pc;
     int ip;
     char predicated;
     char actual;
 
-    public Failure(int ip, char predicated, char actual) {
+    public Failure(int pc, int ip, char predicated, char actual) {
+        this.pc = pc;
         this.ip = ip;
         this.predicated = predicated;
         this.actual = actual;

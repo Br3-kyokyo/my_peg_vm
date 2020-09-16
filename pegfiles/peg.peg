@@ -17,7 +17,7 @@ CharLiteral <- ['] (!['] Char)* ['] Spacing
 StringLiteral <- ["] (!["] Char)* ["] Spacing
 Class <- '[' (!']' Range)* ']' Spacing
 Range <- Char '-' Char / Char
-Char <- '\\' [nrt'"\[\]\\]
+Char <- '\\' [fnrt'"\[\]\\]
 / '\\' 'x' [0-f][0-f]
 / !'\\' .
 LEFTARROW <- '<-' Spacing

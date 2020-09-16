@@ -16,7 +16,7 @@ public class Main {
             byte[] parsingProgram = Files.readAllBytes(Path.of(args[0]));
             List<String> input = Files.readAllLines(Path.of(args[1]), StandardCharsets.UTF_8);
             // char[] inputString = readAll(args[1]).toCharArray();
-            
+
             VM vm = new VM(parsingProgram, input);
             vm.exec();
         } catch (IOException e) {
