@@ -95,8 +95,8 @@ public class PiFunctions {
         list.addOpcode(Opcode.OPCODE_CHOICE);
         list.addOperand(e.size() + Opcode.BYTES + IntOperand.BYTES);
         list.addOpblock(e);
-        list.addOpcode(Opcode.OPCODE_COMMIT);
-        list.addOperand(-(IntOperand.BYTES + Opcode.BYTES + e.size() + Opcode.BYTES + IntOperand.BYTES));
+        list.addOpcode(Opcode.OPCODE_PARTIALCOMMIT);
+        list.addOperand(-(IntOperand.BYTES + Opcode.BYTES + e.size()));
         return list;
 
     }
@@ -111,17 +111,20 @@ public class PiFunctions {
     public static OpList NotPredicate(OpList e) {
         var list = new OpList();
         list.addOpcode(Opcode.OPCODE_CHOICE);
-        list.addOperand(e.size() + Opcode.BYTES + IntOperand.BYTES + Opcode.BYTES);
+        list.addOperand(e.size() + Opcode.BYTES);
         list.addOpblock(e);
-        list.addOpcode(Opcode.OPCODE_COMMIT);
-        list.addOperand(0);
-        list.addOpcode(Opcode.OPCODE_FAIL);
+        list.addOpcode(Opcode.OPCODE_FAILTWICE);
         return list;
     }
 
     public static OpList AndPredicate(OpList e) {
         var list = new OpList();
-        list.addOpblock(NotPredicate(NotPredicate(e)));
+        list.addOpcode(Opcode.OPCODE_CHOICE);
+        list.addOperand(e.size() + Opcode.BYTES + IntOperand.BYTES);
+        list.addOpblock(e);
+        list.addOpcode(Opcode.OPCODE_BACKCOMMIT);
+        list.addOperand(Opcode.BYTES);
+        list.addOpcode(Opcode.OPCODE_FAIL);
         return list;
     }
 

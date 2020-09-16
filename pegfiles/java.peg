@@ -1,0 +1,178 @@
+CompilationUnit <- Spacing? PackageDeclaration? ImportDeclaration* (SEMI / (Modifier* (ClassDeclaration / InterfaceDeclaration)))* EOT
+PackageDeclaration <- PACKAGE QualifiedIdentifier SEMI
+ImportDeclaration <- IMPORT STATIC? QualifiedIdentifier (DOT STAR)? SEMI 
+ClassDeclaration <- CLASS Identifier (EXTENDS ClassType)? (IMPLEMENTS ClassTypeList)? ClassBody
+ClassBody <- LWING ClassBodyDeclaration* RWING
+ClassBodyDeclaration <- SEMI / (STATIC? Block) / (Modifier* MemberDecl) 
+MemberDecl <- (Type Identifier FormalParameters Dim* (THROWS ClassTypeList)? (SEMI / Block)) / (VOID Identifier FormalParameters (THROWS ClassTypeList)? (SEMI / Block)) / (Identifier FormalParameters (THROWS ClassTypeList)? Block) / InterfaceDeclaration / ClassDeclaration / (Type VariableDeclarator (COMMA VariableDeclarator)*)
+InterfaceDeclaration <- INTERFACE Identifier (EXTENDS ClassTypeList)? InterfaceBody
+InterfaceBody <- LWING InterfaceBodyDeclaration* RWING
+InterfaceBodyDeclaration <- (Modifier* InterfaceMemberDecl) / SEMI 
+InterfaceMemberDecl <- InterfaceMethodOrFieldDecl / (VOID Identifier VoidInterfaceMethodDeclaratorRest) / InterfaceDeclaration / ClassDeclaration 
+InterfaceMethodOrFieldDecl <- Type Identifier InterfaceMethodOrFieldRest 
+InterfaceMethodOrFieldRest <- (ConstantDeclaratorsRest SEMI) / InterfaceMethodDeclaratorRest
+InterfaceMethodDeclaratorRest <- FormalParameters Dim* (THROWS ClassTypeList)? SEMI
+VoidInterfaceMethodDeclaratorRest <- FormalParameters (THROWS ClassTypeList)? SEMI
+ConstantDeclaratorsRest <- ConstantDeclaratorRest (COMMA ConstantDeclarator)* 
+ConstantDeclarator <- Identifier ConstantDeclaratorRest
+ConstantDeclaratorRest <- Dim* EQU VariableInitializer 
+LocalVariableDeclarationStatement <- FINAL? Type VariableDeclarator (COMMA VariableDeclarator)* SEMI
+VariableDeclarator <- Identifier Dim* (EQU VariableInitializer)? 
+FormalParameters <- LPAR FormalParameterDecls? RPAR
+FormalParameter <- FINAL? Type VariableDeclaratorId
+FormalParameterDecls <- FINAL? Type FormalParameterDeclsRest 
+FormalParameterDeclsRest <- VariableDeclaratorId (COMMA FormalParameterDecls)? 
+VariableDeclaratorId <- Identifier Dim*
+Block <- LWING BlockStatement* RWING
+BlockStatements <- (BlockStatement)*
+BlockStatement <- LocalVariableDeclarationStatement / (Modifier* ClassDeclaration) / Statement
+Statement <- Block / (ASSERT Expression (COLON Expression)? SEMI) / (IF ParExpression Statement (ELSE Statement)?) / (FOR LPAR ForInit? SEMI Expression? SEMI ForUpdate? RPAR Statement) / (WHILE ParExpression Statement) / (DO Statement WHILE ParExpression SEMI) / (TRY Block ((Catch+ Finally?) / Finally)) / (SWITCH ParExpression LWING SwitchBlockStatementGroups RWING) / (SYNCHRONIZED ParExpression Block) / (RETURN Expression? SEMI) / (THROW Expression SEMI) / (BREAK Identifier? SEMI) / (CONTINUE Identifier? SEMI) / SEMI / (Expression SEMI) / (Identifier COLON Statement)
+Catch <- CATCH LPAR FormalParameter RPAR Block
+Finally <- FINALLY Block
+SwitchBlockStatementGroups <- SwitchBlockStatementGroup* 
+SwitchBlockStatementGroup <- SwitchLabel BlockStatements
+SwitchLabel <- (CASE Expression COLON) / (DEFAULT COLON)
+ForInit <- (FINAL? Type VariableDeclarator (COMMA VariableDeclarator)*) / (Expression (COMMA Expression)*)
+ForUpdate <- Expression (COMMA Expression)*
+Expression <- ConditionalExpression (AssignmentOperator ConditionalExpression)* 
+AssignmentOperator <- EQU / PLUS_EQU / MINUS_EQU / STAR_EQU / DIV_EQU / AND_EQU / OR_EQU / HAT_EQU / MOD_EQU / SL_EQU / SR_EQU / BSR_EQU
+ConditionalExpression <- ConditionalOrExpression (QUERY Expression COLON ConditionalOrExpression)*
+ConditionalOrExpression <- ConditionalAndExpression (OR_OR ConditionalAndExpression)*
+ConditionalAndExpression <- InclusiveOrExpression (AND_AND InclusiveOrExpression )*
+InclusiveOrExpression <- ExclusiveOrExpression (OR ExclusiveOrExpression)* 
+ExclusiveOrExpression <- AndExpression (HAT AndExpression)*
+AndExpression <- EqualityExpression (AND EqualityExpression)*
+EqualityExpression <- RelationalExpression ((EQUAL / NOT_EQUAL) RelationalExpression)*
+RelationalExpression <- ShiftExpression (((LE / GE / LT / GT) ShiftExpression) / (INSTANCEOF ReferenceType))*
+ShiftExpression <- AdditiveExpression ((SL / SR / BSR) AdditiveExpression)* 
+AdditiveExpression <- MultiplicativeExpression ((PLUS / MINUS) MultiplicativeExpression)*
+MultiplicativeExpression <- UnaryExpression ((STAR / DIV / MOD) UnaryExpression)* 
+UnaryExpression <- (PrefixOp UnaryExpression) / (LPAR Type RPAR UnaryExpression) / (Primary (Selector)* (PostfixOp)*)
+Primary <- ParExpression / (THIS Arguments?) / (SUPER SuperSuffix) / Literal / (NEW Creator) / (QualifiedIdentifier IdentifierSuffix?) / (BasicType Dim* DOT CLASS) / (VOID DOT CLASS)
+IdentifierSuffix <- (LBRK ((RBRK Dim* DOT CLASS) / (Expression RBRK))) / Arguments / (DOT (CLASS / THIS / (SUPER Arguments) / (NEW InnerCreator)))
+PrefixOp <- INC / DEC / BANG / TILDA / PLUS / MINUS
+PostfixOp <- INC / DEC
+Selector <- (DOT Identifier Arguments?) / (DOT THIS) / (DOT SUPER SuperSuffix) / (DOT NEW InnerCreator) / DimExpr
+SuperSuffix <- Arguments / (DOT Identifier Arguments?)
+BasicType <- ("byte" / "short" / "char" / "int" / "long" / "float" / "double" / "boolean") LeSpa
+Arguments <- LPAR (Expression (COMMA Expression)*)? RPAR
+Creator <- (CreatedName ClassCreatorRest) / ((ClassType / BasicType) ArrayCreatorRest)
+CreatedName <- Identifier (DOT Identifier)*
+InnerCreator <- Identifier ClassCreatorRest
+ArrayCreatorRest <- LBRK ((RBRK Dim* ArrayInitializer) / (Expression RBRK DimExpr* Dim*))
+ClassCreatorRest <- Arguments ClassBody?
+ArrayInitializer <- LWING (VariableInitializer (COMMA VariableInitializer)* COMMA?)? RWING
+VariableInitializer <- ArrayInitializer / Expression
+ParExpression <- LPAR Expression RPAR
+QualifiedIdentifier <- Identifier (DOT Identifier)*
+Dim <- LBRK RBRK
+DimExpr <- LBRK Expression RBRK
+Type <- (BasicType / ClassType) Dim*
+ReferenceType <- (BasicType Dim+) / (ClassType Dim*)
+ClassType <- Identifier (DOT Identifier)*
+ClassTypeList <- ClassType (COMMA ClassType)*
+Modifier <- ("public" / "protected" / "private" / "static" / "abstract" / "final" / "native" / "synchronized" / "transient" / "volatile" / "strictfp") LeSpa 
+Spacing <- ([ \f\t\r\n]+ / ("/*" ((!"*/") .)* "*/") / ("//" ((![\r\n]) .)* [\r\n] ))*
+Identifier <- (!Keyword) Letter LetterOrDigit* Spacing?
+Letter <- [a-z] / [A-Z] / [_$]
+LetterOrDigit <- [a-z] / [A-Z] / [0-9] / [_$]
+Keyword <- ("abstract" / "assert" / "boolean" / "break" / "byte" / "case" / "cat ch" / "char" / "class" / "continue" / "default" / "double" / "do" / "else" / "en um" / "extends" / "false" / "finally" / "final" / "float" / "for" / "if" / "impl ements" / "import" / "interface" / "int" / "instanceof" / "long" / "native" / "n ew" / "null" / "package" / "private" / "protected" / "public" / "return" / "shor t" / "static" / "strictfp" / "super" / "switch" / "synchronized" / "this" / "thr ows" / "throw" / "transient" / "true" / "try" / "void" / "volatile" / "while") (!LetterOrDigit)
+LeSpa <- (!LetterOrDigit) Spacing?
+ASSERT <- "assert" LeSpa
+BREAK <- "break" LeSpa
+CASE <- "case" LeSpa
+CATCH <- "catch" LeSpa
+CLASS <- "class" LeSpa
+CONTINUE <- "continue" LeSpa
+DEFAULT <- "default" LeSpa
+DO <- "do" LeSpa
+ELSE <- "else" LeSpa 
+ENUM <- "enum" LeSpa 
+EXTENDS <- "extends" LeSpa
+FINALLY <- "finally" LeSpa
+FINAL <- "final" LeSpa 
+FOR <- "for" LeSpa
+IF <- "if" LeSpa
+IMPLEMENTS <- "implements" LeSpa
+IMPORT <- "import" LeSpa 
+INTERFACE <- "interface" LeSpa
+INSTANCEOF <- "instanceof" LeSpa 
+NEW <- "new" LeSpa
+PACKAGE <- "package" LeSpa 
+RETURN <- "return" LeSpa
+STATIC <- "static" LeSpa
+SUPER <- "super" LeSpa
+SWITCH <- "switch" LeSpa 
+SYNCHRONIZED <- "synchronized" LeSpa 
+THIS <- "this" LeSpa
+THROWS <- "throws" LeSpa
+THROW <- "throw" LeSpa
+TRY <- "try" LeSpa
+VOID <- "void" LeSpa
+WHILE <- "while" LeSpa
+Literal <- (FloatLiteral / IntegerLiteral / CharLiteral / StringLiteral / ("true" (!LetterOrDigit)) / ("false" (!LetterOrDigit)) / ("null" (!LetterOrDigit))) Spacing?
+IntegerLiteral <- (HexNumeral / OctalNumeral / DecimalNumeral) [lL]? 
+DecimalNumeral <- "0" / ([1-9] [0-9]*)
+HexNumeral <- ("0x" / "0X") ([a-f] / [A-F] / [0-9])+
+OctalNumeral <- "0" [0-7]+
+FloatLiteral <- HexFloat / DecimalFloat
+DecimalFloat <- ([0-9]+ "." [0-9]* Exponent? [fFdD]?) / ("." [0-9]+ Exponent? [f FdD]?) / ([0-9]+ Exponent [fFdD]?) / ([0-9]+ Exponent? [fFdD])
+Exponent <- [eE] [+\\-]? [0-9]+
+HexFloat <- HexSignificand BinaryExponent [fFdD]?
+HexSignificand <- (HexNumeral "."?) / (("0x" / "0X") ([a-f] / [A-F] / [0-9])* "." ([a-f] / [A-F] / [0-9])+)
+BinaryExponent <- [pP] [+\\-]? [0-9]+
+CharLiteral <- "'" (Escape / ((!['\\]) .)) "'"
+StringLiteral <- "\"" (Escape / ((!["\\]) .) )* "\""
+Escape <- "\\" ([btnfr\"'\\] / OctalEscape / UnicodeEscape)
+OctalEscape <- ([0-3] [0-7] [0-7]) / ([0-7] [0-7]) / [0-7]
+UnicodeEscape <- "u" ([a-f] / [A-F] / [0-9]) ([a-f] / [A-F] / [0-9]) ([a-f] / [A-F] / [0-9]) ([a-f] / [A-F] / [0-9])
+AT <- "@" Spacing?
+AND <- "&" (![=&]) Spacing? 
+AND_AND <- "&&" Spacing? 
+AND_EQU <- "&=" Spacing? 
+BANG <- "!" (!"=") Spacing? 
+BSR <- ">>>" (!"=") Spacing? 
+BSR_EQU <- ">>>=" Spacing? 
+COLON <- ":" Spacing?
+COMMA <- "," Spacing?
+DEC <- "--" Spacing?
+DIV <- "/" (!"=") Spacing? 
+DIV_EQU <- "/=" Spacing? 
+DOT <- "." Spacing?
+EQU <- "=" (!"=") Spacing? 
+EQUAL <- "==" Spacing?
+GE <- ">=" Spacing?
+GT <- ">" (![=>]) Spacing?
+HAT <- "ˆ" (!"=") Spacing? 
+HAT_EQU <- "ˆ=" Spacing?
+INC <- "++" Spacing?
+LBRK <- "[" Spacing?
+LE <- "<=" Spacing?
+LPAR <- "(" Spacing?
+LPOINT <- "<" Spacing?
+LT <- "<" (![=<]) Spacing? 
+LWING <- "{" Spacing?
+MINUS <- "-" (![=\-]) Spacing? 
+MINUS_EQU <- "-=" Spacing?
+MOD <- "%" (!"=") Spacing? 
+MOD_EQU <- "%=" Spacing? 
+NOT_EQUAL <- "!=" Spacing? 
+OR <- "|" (![=|]) Spacing? 
+OR_EQU <- "|=" Spacing? 
+OR_OR <- "||" Spacing?
+PLUS <- "+" (![=+]) Spacing? 
+PLUS_EQU <- "+=" Spacing? 
+QUERY <- "?" Spacing?
+RBRK <- "]" Spacing?
+RPAR <- ")" Spacing?
+RPOINT <- ">" Spacing? 
+RWING <- "}" Spacing?
+SEMI <- ";" Spacing?
+SL <- "<<" (!"=") Spacing? 
+SL_EQU <- "<<=" Spacing?
+SR <- ">>" (![=>]) Spacing? 
+SR_EQU <- ">>=" Spacing? 
+STAR <- "*" (!"=") Spacing? 
+STAR_EQU <- "*=" Spacing? 
+TILDA <- " ̃" 
+EOT <- !.

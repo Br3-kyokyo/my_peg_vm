@@ -145,4 +145,8 @@ public class OpList {
                 | ((list.get(i + 1) & mask) << 8) | (list.get(i) & mask);
         return operand;
     }
+
+    public HashMap<String, Integer> getNTaddressMap() {
+        return OpList.NTaddressMap;
+    }
 }

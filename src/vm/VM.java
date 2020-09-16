@@ -21,7 +21,7 @@ public class VM {
 
     private TreeMap<Integer, Integer> ipLinenumMap = new TreeMap<Integer, Integer>();
 
-    Failure farthestFailure = new Failure(0, ' ', ' ');
+    Failure farthestFailure = new Failure(0, 0, ' ', ' ');
 
     public VM(byte[] program, List<String> input) {
         this.program = program;
@@ -40,7 +40,7 @@ public class VM {
     public boolean exec() throws UnknownInstructionException {
         try {
             while (true) {
-                // System.out.println(ip + ":" + Integer.toHexString(pc));
+                System.out.println(ip + ":" + Integer.toHexString(pc));
                 byte opcode = program[pc++];
                 if (opcode == Opcode.OPCODE_CHAR) {
                     inst_char();
@@ -61,6 +61,12 @@ public class VM {
                 } else if (opcode == Opcode.OPCODE_END) {
                     inst_end();
                     return true;
+                } else if (opcode == Opcode.OPCODE_FAILTWICE) {
+                    inst_failtwice();
+                } else if (opcode == Opcode.OPCODE_PARTIALCOMMIT) {
+                    inst_partialcommit();
+                } else if (opcode == Opcode.OPCODE_BACKCOMMIT) {
+                    inst_backcommit();
                 } else if (opcode == Opcode.OPCODE_LOG) {
                     System.out.print(readCharOperand());
                 } else {
@@ -131,7 +137,7 @@ public class VM {
 
     private void inst_fail(char predicated, char actual) throws SyntaxError {
         if (this.farthestFailure.ip <= this.ip)
-            this.farthestFailure = new Failure(ip, predicated, actual);
+            this.farthestFailure = new Failure(pc, ip, predicated, actual);
 
         boolean success = backtrack();
         if (!success)
@@ -142,6 +148,28 @@ public class VM {
         boolean success = backtrack();
         if (!success)
             throw new SyntaxError();
+    }
+
+    private void inst_failtwice() throws SyntaxError {
+        stack.pop(); // inst_fail()でも多分大丈夫
+        inst_fail();
+    }
+
+    private void inst_partialcommit() {
+        int operand = readIntOperand();
+
+        BacktrackEntry e = (BacktrackEntry) stack.pop();
+        stack.push(new BacktrackEntry(e.pc, this.ip));
+        pc = pc + operand;
+    }
+
+    private void inst_backcommit() {
+        int operand = readIntOperand();
+
+        BacktrackEntry be = (BacktrackEntry) stack.pop();
+
+        pc = pc + operand;
+        ip = be.ip;
     }
 
     private boolean backtrack() {
@@ -168,6 +196,7 @@ public class VM {
         int charpos = f.ip - rowip;
         String row = inputLines.get(linenum);
 
+        System.out.println("pc:" + f.pc);
         System.out.println((linenum + 1) + ":" + charpos + "(" + f.ip + "): syntax error");
         System.out.println(row);
         for (int i = 0; i < (row.length() + 1); i++) {
@@ -225,11 +254,13 @@ class ReturnEntry extends Entry {
 
 class Failure {
 
+    int pc;
     int ip;
     char predicated;
     char actual;
 
-    public Failure(int ip, char predicated, char actual) {
+    public Failure(int pc, int ip, char predicated, char actual) {
+        this.pc = pc;
         this.ip = ip;
         this.predicated = predicated;
         this.actual = actual;

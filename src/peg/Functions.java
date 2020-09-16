@@ -87,6 +87,10 @@ public class Functions {
 
             switch (cp) {
 
+                case '"':
+                    newstr.append('"');
+                    break; /* switch */
+
                 case 'r':
                     newstr.append('\r');
                     break; /* switch */

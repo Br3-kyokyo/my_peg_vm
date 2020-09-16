@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 
 import peg.OpList;
@@ -26,6 +27,7 @@ public class PEGCompiler {
 
             outputBinaryCode(oplist.toBinary(), "vmcode.bin");
             outputMetaData(oplist.toString(), "vmcode.meta");
+            outputMaptoCSV(oplist.getNTaddressMap(), "ntaddress.csv");
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -45,6 +47,21 @@ public class PEGCompiler {
     private static void outputMetaData(String string, String filename) throws IOException {
         FileWriter fw = new FileWriter(filename);
         fw.write(string);
+        fw.close();
+    }
+
+    private static void outputMaptoCSV(HashMap<String, Integer> map, String filename) throws IOException {
+        FileWriter fw = new FileWriter(filename);
+
+        StringBuilder sb = new StringBuilder();
+        for (var e : map.entrySet()) {
+            sb.append(e.getValue());
+            sb.append(",");
+            sb.append(e.getKey());
+            sb.append("\n");
+        }
+
+        fw.write(sb.toString());
         fw.close();
     }
 
