@@ -1,6 +1,7 @@
 *.bin
 *.lang
 *.meta
+*.csv
 
 /build/
 .classpath
