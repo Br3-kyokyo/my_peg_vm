@@ -119,7 +119,12 @@ public class PiFunctions {
 
     public static OpList AndPredicate(OpList e) {
         var list = new OpList();
-        list.addOpblock(NotPredicate(NotPredicate(e)));
+        list.addOpcode(Opcode.OPCODE_CHOICE);
+        list.addOperand(e.size() + Opcode.BYTES + IntOperand.BYTES);
+        list.addOpblock(e);
+        list.addOpcode(Opcode.OPCODE_BACKCOMMIT);
+        list.addOperand(Opcode.BYTES);
+        list.addOpcode(Opcode.OPCODE_FAIL);
         return list;
     }
 

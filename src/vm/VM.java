@@ -65,6 +65,8 @@ public class VM {
                     inst_failtwice();
                 } else if (opcode == Opcode.OPCODE_PARTIALCOMMIT) {
                     inst_partialcommit();
+                } else if (opcode == Opcode.OPCODE_BACKCOMMIT) {
+                    inst_backcommit();
                 } else if (opcode == Opcode.OPCODE_LOG) {
                     System.out.print(readCharOperand());
                 } else {
@@ -153,12 +155,21 @@ public class VM {
         inst_fail();
     }
 
-    private void inst_partialcommit() throws SyntaxError {
+    private void inst_partialcommit() {
         int operand = readIntOperand();
 
         BacktrackEntry e = (BacktrackEntry) stack.pop();
         stack.push(new BacktrackEntry(e.pc, this.ip));
         pc = pc + operand;
+    }
+
+    private void inst_backcommit() {
+        int operand = readIntOperand();
+
+        BacktrackEntry be = (BacktrackEntry) stack.pop();
+
+        pc = pc + operand;
+        ip = be.ip;
     }
 
     private boolean backtrack() {
