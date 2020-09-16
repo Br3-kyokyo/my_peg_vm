@@ -20,7 +20,11 @@ public class Opcode extends Op {
     public static final byte OPCODE_PARTIALCOMMIT = 0x0a;
     public static final byte OPCODE_BACKCOMMIT = 0x0b;
 
-    public static final byte OPCODE_LOG = 0x0c;
+    // PackratParsing Operation - PackratParser化のために追加
+    public static final byte OPCODE_MEMO = 0x0c;
+    public static final byte OPCODE_WRITE = 0x0d;
+
+    public static final byte OPCODE_LOG = 0x0e;
 
     public static final int BYTES = 1;
 
