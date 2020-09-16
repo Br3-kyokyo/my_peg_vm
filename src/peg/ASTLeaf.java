@@ -16,7 +16,7 @@ class StringStmnt extends ASTLeaf {
     }
 
     @Override
-    public OpList eval() {
+    public OpList eval(ParsingOption option) {
         return PiFunctions.String(value);
     }
 
@@ -37,7 +37,7 @@ class CharStmnt extends ASTLeaf {
     }
 
     @Override
-    public OpList eval() {
+    public OpList eval(ParsingOption option) {
         return PiFunctions.Char(value);
     }
 
@@ -68,7 +68,7 @@ class BracketStmnt extends ASTLeaf {
     }
 
     @Override
-    public OpList eval() throws RuntimeException {
+    public OpList eval(ParsingOption option) throws RuntimeException {
 
         var charlist = new ArrayList<Character>();
         for (var tuple : tuplelist)
@@ -88,7 +88,7 @@ class IdentifireStmnt extends ASTLeaf {
     }
 
     @Override
-    public OpList eval() {
+    public OpList eval(ParsingOption option) {
         return PiFunctions.NT(name);
     }
 
@@ -106,7 +106,7 @@ class EmptyStmnt extends ASTLeaf {
     }
 
     @Override
-    public OpList eval() {
+    public OpList eval(ParsingOption option) {
         return new OpList(); // 空
     }
 
@@ -123,7 +123,7 @@ class DotStmnt extends ASTLeaf {
     }
 
     @Override
-    public OpList eval() {
+    public OpList eval(ParsingOption option) {
         return PiFunctions.Any();
     }
 

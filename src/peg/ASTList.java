@@ -25,16 +25,15 @@ class GrammerStmnt extends ASTList {
     }
 
     @Override
-    public OpList eval() throws RuntimeException {
+    public OpList eval(ParsingOption option) throws RuntimeException {
         var oplist = new OpList();
         oplist.addOpcode(Opcode.OPCODE_CALL);
         oplist.addOperand(1);
         oplist.addOpcode(Opcode.OPCODE_END);
-        for (ASTree tree : getChildren()) {
-            RuleStmnt dif = (RuleStmnt) tree;
-            OpList.NTaddressMap.put(dif.getLeft().name, oplist.size());
-            oplist.addOpblock(dif.eval());
-        }
+
+        for (ASTree tree : getChildren())
+            oplist.addOpblock(tree.eval(option));
+
         oplist = PiFunctions.ReplaceCallNtAddr(oplist);
         return oplist;
     }
@@ -58,10 +57,12 @@ class RuleStmnt extends ASTList {
     }
 
     @Override
-    public OpList eval() throws RuntimeException {
+    public OpList eval(ParsingOption option) throws RuntimeException {
         var oplist = new OpList();
 
-        oplist.addOpblock(this.getExpression().eval());
+        oplist.NTaddressMap.put(getLeft().name, 0);
+        oplist.addOpblock(this.getExpression().eval(option));
+
         oplist.addOpcode(Opcode.OPCODE_RETURN);
 
         return oplist;
@@ -93,8 +94,8 @@ class ChoiceStmnt extends ASTList {
     }
 
     @Override
-    public OpList eval() {
-        return PiFunctions.Choice(left().eval(), right().eval());
+    public OpList eval(ParsingOption option) {
+        return PiFunctions.Choice(left().eval(option), right().eval(option));
     }
 
     private ASTree left() {
@@ -123,9 +124,9 @@ class SequenceStmnt extends ASTList {
     }
 
     @Override
-    public OpList eval() {
-        OpList left = left().eval();
-        OpList right = right().eval();
+    public OpList eval(ParsingOption option) {
+        OpList left = left().eval(option);
+        OpList right = right().eval(option);
 
         return PiFunctions.Sequence(left, right);
     }
@@ -163,9 +164,9 @@ class PrimaryStmnt extends ASTList {
     }
 
     @Override
-    public OpList eval() {
+    public OpList eval(ParsingOption option) {
 
-        OpList bodycode = getChild().eval();
+        OpList bodycode = getChild().eval(option);
 
         if (modifire == Modifire.question) {
             return PiFunctions.Option(bodycode);

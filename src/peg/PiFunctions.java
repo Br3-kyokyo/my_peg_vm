@@ -139,7 +139,7 @@ public class PiFunctions {
 
             // 当該アドレスを埋める
             try {
-                int offset = OpList.NTaddressMap.get(nt) - (replaceTargetAddr + 4);
+                int offset = oplist.NTaddressMap.get(nt) - (replaceTargetAddr + 4);
                 oplist.addOperand(replaceTargetAddr, offset);
             } catch (NullPointerException e) {
                 System.out.println("存在しない非終端記号を参照しています。:" + nt);

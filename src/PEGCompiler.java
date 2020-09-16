@@ -23,11 +23,11 @@ public class PEGCompiler {
             List<String> input = Files.readAllLines(Path.of(args[0]), StandardCharsets.UTF_8);
 
             VMCodeGenerator vmcodeGenerator = new VMCodeGenerator(input);
-            OpList oplist = vmcodeGenerator.generate();
+            OpList oplist = vmcodeGenerator.generate(true);
 
             outputBinaryCode(oplist.toBinary(), "vmcode.bin");
             outputMetaData(oplist.toString(), "vmcode.meta");
-            outputMaptoCSV(oplist.getNTaddressMap(), "ntaddress.csv");
+            outputMaptoCSV(oplist.NTaddressMap, "ntaddress.csv");
 
         } catch (IOException e) {
             e.printStackTrace();

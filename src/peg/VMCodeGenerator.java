@@ -15,12 +15,14 @@ public class VMCodeGenerator {
         this.input = input;
     }
 
-    public OpList generate() {
+    public OpList generate(boolean packratparsing) {
 
         try {
             ASTree tree = Grammer();
+            OpList oplist = tree.eval(new ParsingOption(packratparsing));
+
             System.out.println(tree.toString());
-            OpList oplist = tree.eval();
+
             return oplist;
         } catch (SyntaxError e) {
             System.out.println(lp + 1 + ":" + ip + ": SyntaxError");
