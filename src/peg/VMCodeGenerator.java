@@ -19,7 +19,7 @@ public class VMCodeGenerator {
 
         try {
             ASTree tree = Grammer();
-            OpList oplist = tree.eval(new ParsingOption(packratparsing));
+            OpList oplist = tree.eval(new ParsingEnv(tree, packratparsing));
 
             System.out.println(tree.toString());
 
@@ -65,10 +65,10 @@ public class VMCodeGenerator {
     }
 
     private ASTree Difinition() throws SyntaxError {
-        ASTree id = Identifire();
+        IdentifireStmnt id = (IdentifireStmnt) Identifire();
         LEFTARROW();
         ASTree expr = Expression();
-        return new RuleStmnt(Arrays.asList(id, expr));
+        return new RuleStmnt(id.name, expr);
     }
 
     private ASTree Expression() throws SyntaxError {

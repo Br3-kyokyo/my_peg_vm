@@ -25,14 +25,14 @@ class GrammerStmnt extends ASTList {
     }
 
     @Override
-    public OpList eval(ParsingOption option) throws RuntimeException {
+    public OpList eval(ParsingEnv env) throws RuntimeException {
         var oplist = new OpList();
         oplist.addOpcode(Opcode.OPCODE_CALL);
         oplist.addOperand(1);
         oplist.addOpcode(Opcode.OPCODE_END);
 
         for (ASTree tree : getChildren())
-            oplist.addOpblock(tree.eval(option));
+            oplist.addOpblock(tree.eval(env));
 
         oplist = PiFunctions.ReplaceCallNtAddr(oplist);
         return oplist;
@@ -52,38 +52,59 @@ class GrammerStmnt extends ASTList {
 
 class RuleStmnt extends ASTList {
 
-    public RuleStmnt(List<ASTree> children) {
-        super(children);
+    private String name;
+
+    private static int nextid = 0;
+    private int id;
+
+    public RuleStmnt(String name, ASTree expr) {
+        super(Arrays.asList(expr));
+        this.name = name;
+        id = nextid++;
     }
 
     @Override
-    public OpList eval(ParsingOption option) throws RuntimeException {
+    public OpList eval(ParsingEnv env) throws RuntimeException {
         var oplist = new OpList();
+        var packrat = env.isPackrat();
 
-        oplist.NTaddressMap.put(getLeft().name, 0);
-        oplist.addOpblock(this.getExpression().eval(option));
+        oplist.NTaddressMap.put(name, 0);
+
+        if (packrat) {
+            oplist.addOpcode(Opcode.OPCODE_MEMO);
+            oplist.addOperand(id);
+        }
+
+        oplist.addOpblock(this.getExpression().eval(env));
+
+        if (packrat)
+            oplist.addOpcode(Opcode.OPCODE_WRITE);
 
         oplist.addOpcode(Opcode.OPCODE_RETURN);
 
         return oplist;
     }
 
-    public IdentifireStmnt getLeft() {
-        return (IdentifireStmnt) getChildren().get(0);
-    }
-
     public ASTree getExpression() {
-        return getChildren().get(1);
+        return getChildren().get(0);
     }
 
     @Override
     public String toString() {
         // TODO Auto-generated method stub
         StringBuilder sb = new StringBuilder();
-        sb.append(getLeft().toString());
+        sb.append(name);
         sb.append(" -> ");
         sb.append(getExpression().toString());
         return sb.toString();
+    }
+
+    public int getid() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
     }
 }
 
@@ -94,8 +115,8 @@ class ChoiceStmnt extends ASTList {
     }
 
     @Override
-    public OpList eval(ParsingOption option) {
-        return PiFunctions.Choice(left().eval(option), right().eval(option));
+    public OpList eval(ParsingEnv env) {
+        return PiFunctions.Choice(left().eval(env), right().eval(env));
     }
 
     private ASTree left() {
@@ -115,6 +136,7 @@ class ChoiceStmnt extends ASTList {
         sb.append(right().toString());
         return sb.toString();
     }
+
 }
 
 class SequenceStmnt extends ASTList {
@@ -124,9 +146,9 @@ class SequenceStmnt extends ASTList {
     }
 
     @Override
-    public OpList eval(ParsingOption option) {
-        OpList left = left().eval(option);
-        OpList right = right().eval(option);
+    public OpList eval(ParsingEnv env) {
+        OpList left = left().eval(env);
+        OpList right = right().eval(env);
 
         return PiFunctions.Sequence(left, right);
     }
@@ -164,9 +186,9 @@ class PrimaryStmnt extends ASTList {
     }
 
     @Override
-    public OpList eval(ParsingOption option) {
+    public OpList eval(ParsingEnv env) {
 
-        OpList bodycode = getChild().eval(option);
+        OpList bodycode = getChild().eval(env);
 
         if (modifire == Modifire.question) {
             return PiFunctions.Option(bodycode);

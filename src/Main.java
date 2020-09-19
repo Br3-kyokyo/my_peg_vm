@@ -17,8 +17,19 @@ public class Main {
             List<String> input = Files.readAllLines(Path.of(args[1]), StandardCharsets.UTF_8);
             // char[] inputString = readAll(args[1]).toCharArray();
 
+            long startTime = System.currentTimeMillis();
+            System.out.println("開始時刻：" + startTime + " ms");
+            
             VM vm = new VM(parsingProgram, input);
             vm.exec();
+     
+            long endTime = System.currentTimeMillis();
+     
+            System.out.println("終了時刻：" + endTime + " ms");
+            System.out.println("処理時間：" + (endTime - startTime) + " ms");
+        
+            
+
         } catch (IOException e) {
             e.printStackTrace();
         } catch (Exception e) {
