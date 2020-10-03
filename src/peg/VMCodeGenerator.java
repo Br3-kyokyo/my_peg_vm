@@ -15,12 +15,14 @@ public class VMCodeGenerator {
         this.input = input;
     }
 
-    public OpList generate() {
+    public OpList generate(boolean packratparsing) {
 
         try {
             ASTree tree = Grammer();
+            OpList oplist = tree.eval(new ParsingEnv(tree, packratparsing));
+
             System.out.println(tree.toString());
-            OpList oplist = tree.eval();
+
             return oplist;
         } catch (SyntaxError e) {
             System.out.println(lp + 1 + ":" + ip + ": SyntaxError");
@@ -63,10 +65,10 @@ public class VMCodeGenerator {
     }
 
     private ASTree Difinition() throws SyntaxError {
-        ASTree id = Identifire();
+        IdentifireStmnt id = (IdentifireStmnt) Identifire();
         LEFTARROW();
         ASTree expr = Expression();
-        return new RuleStmnt(Arrays.asList(id, expr));
+        return new RuleStmnt(id.name, expr);
     }
 
     private ASTree Expression() throws SyntaxError {

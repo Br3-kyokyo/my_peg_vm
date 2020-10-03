@@ -11,6 +11,9 @@ import consts.Opcode;
 //構文解析に特化した仮想マシン
 public class VM {
 
+    private boolean packrat;
+    private int ruleNums;
+
     private byte[] program;
     private char[] inputString;
     private List<String> inputLines;
@@ -18,21 +21,35 @@ public class VM {
     private int ip = 0; // 入力の解析位置(input parsing position)
     private int pc = 0; // プログラムカウンタ(program counter)
     private Deque<Entry> stack = new ArrayDeque<Entry>(); // Stack
+    private MemoTable memoTable;
 
     private TreeMap<Integer, Integer> ipLinenumMap = new TreeMap<Integer, Integer>();
 
     Failure farthestFailure = new Failure(0, 0, ' ', ' ');
 
-    public VM(byte[] program, List<String> input) {
-        this.program = program;
-        this.inputLines = input;
-        this.inputString = input.stream().collect(Collectors.joining(System.getProperty("line.separator")))
+    private int memonum = 0;
+    private int loopnum = 0;
+    private int backtracknum = 0;
+
+    public VM(byte[] _program, List<String> _input) throws Exception {
+
+        this.program = _program;
+        this.inputLines = _input;
+        this.inputString = inputLines.stream().collect(Collectors.joining(System.getProperty("line.separator")))
                 .toCharArray();
 
+        packrat = isPackrat(program[pc++]);
+
+        if (packrat) {
+            ruleNums = readIntOperand();
+            // memoTable = new MemoTable(ruleNums, inputString.length + 1);
+            memoTable = new MemoTable(ruleNums);
+        }
+
         int lengthsum = 0;
-        for (int i = 0; i < input.size(); i++) {
+        for (int i = 0; i < inputLines.size(); i++) {
             ipLinenumMap.put(lengthsum, i);
-            lengthsum = lengthsum + (input.get(i).length() + 1); // +1は改行文字分
+            lengthsum = lengthsum + (inputLines.get(i).length() + 1); // +1は改行文字分
         }
     }
 
@@ -40,7 +57,8 @@ public class VM {
     public boolean exec() throws UnknownInstructionException {
         try {
             while (true) {
-                System.out.println(ip + ":" + Integer.toHexString(pc));
+                loopnum++;
+                // System.out.println(ip + ":" + Integer.toHexString(pc));
                 byte opcode = program[pc++];
                 if (opcode == Opcode.OPCODE_CHAR) {
                     inst_char();
@@ -60,6 +78,9 @@ public class VM {
                     inst_fail();
                 } else if (opcode == Opcode.OPCODE_END) {
                     inst_end();
+                    System.out.println("btnum:" + backtracknum);
+                    System.out.println("loop:" + loopnum);
+                    System.out.println("memo:" + memonum);
                     return true;
                 } else if (opcode == Opcode.OPCODE_FAILTWICE) {
                     inst_failtwice();
@@ -67,6 +88,10 @@ public class VM {
                     inst_partialcommit();
                 } else if (opcode == Opcode.OPCODE_BACKCOMMIT) {
                     inst_backcommit();
+                } else if (opcode == Opcode.OPCODE_MEMO) {
+                    inst_memo();
+                } else if (opcode == Opcode.OPCODE_WRITE) {
+                    inst_write();
                 } else if (opcode == Opcode.OPCODE_LOG) {
                     System.out.print(readCharOperand());
                 } else {
@@ -100,7 +125,7 @@ public class VM {
 
     private void inst_call() {
         int addrOffset = readIntOperand();
-        stack.push(new ReturnEntry(pc));
+        stack.push(new ReturnEntry(pc, ip));
         pc = pc + addrOffset;
     }
 
@@ -115,7 +140,7 @@ public class VM {
     }
 
     private void inst_any() throws SyntaxError {
-        if (inputString.length == ip) {
+        if (inputString.length == ip) { // TODO =<の方がいい？
             inst_fail();
         } else {
             ip++;
@@ -172,15 +197,46 @@ public class VM {
         ip = be.ip;
     }
 
-    private boolean backtrack() {
+    private void inst_memo() throws SyntaxError {
+        int ruleid = readIntOperand();
 
+        ((ReturnEntry) stack.peek()).id = ruleid;
+
+        MemoEntry memoEntry = memoTable.get(ruleid, ip);
+
+        if (memoEntry == null)
+            return;
+
+        memonum++;
+
+        if (memoEntry.success) {
+            this.ip = memoEntry.ip;
+            inst_return();
+        } else {
+            inst_fail();
+        }
+    }
+
+    private void inst_write() {
+        ReturnEntry rentry = (ReturnEntry) stack.peek();
+        // memoTable.set(rentry.id, rentry.ip, ip, true);
+        memoTable.set(rentry.id, rentry.ip, new MemoEntry(ip, true));
+
+    }
+
+    private boolean backtrack() {
         while (!stack.isEmpty()) {
             Entry entry = stack.pop();
+            backtracknum++;
             if (entry instanceof BacktrackEntry) {
                 BacktrackEntry bentry = (BacktrackEntry) entry;
                 ip = bentry.ip;
                 pc = bentry.pc;
                 return true;
+            } else if (packrat && entry instanceof ReturnEntry) {
+                ReturnEntry rentry = (ReturnEntry) entry;
+                // memoTable.set(rentry.id, rentry.ip, -1, false);
+                memoTable.set(rentry.id, rentry.ip, new MemoEntry(-1, false));
             }
         }
         return false;
@@ -226,10 +282,19 @@ public class VM {
 
         return operand;
     }
+
+    private boolean isPackrat(byte b) throws Exception {
+        if (b == 0x00) {
+            return false;
+        } else if (b == 0x01) {
+            return true;
+        } else {
+            throw new Exception("Packrat flag must be 0x00 or 0x01");
+        }
+    }
 }
 
 class Entry {
-
 }
 
 class BacktrackEntry extends Entry {
@@ -244,11 +309,12 @@ class BacktrackEntry extends Entry {
 
 class ReturnEntry extends Entry {
     int pc;
-    // int pos;
-    // String id; //メモ化用
+    int ip; // メモ化用
+    int id = -1; // メモ化用
 
-    ReturnEntry(int pc) {
+    ReturnEntry(int pc, int ip) {
         this.pc = pc;
+        this.ip = ip;
     }
 }
 
@@ -266,7 +332,3 @@ class Failure {
         this.actual = actual;
     }
 }
-
-// class CharFailure extends Failure
-// class NotFailure extends Failure
-// class AndFailure extends Failure

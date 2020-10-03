@@ -16,7 +16,7 @@ class StringStmnt extends ASTLeaf {
     }
 
     @Override
-    public OpList eval() {
+    public OpList eval(ParsingEnv env) {
         return PiFunctions.String(value);
     }
 
@@ -37,7 +37,7 @@ class CharStmnt extends ASTLeaf {
     }
 
     @Override
-    public OpList eval() {
+    public OpList eval(ParsingEnv env) {
         return PiFunctions.Char(value);
     }
 
@@ -68,7 +68,7 @@ class BracketStmnt extends ASTLeaf {
     }
 
     @Override
-    public OpList eval() throws RuntimeException {
+    public OpList eval(ParsingEnv env) throws RuntimeException {
 
         var charlist = new ArrayList<Character>();
         for (var tuple : tuplelist)
@@ -88,8 +88,12 @@ class IdentifireStmnt extends ASTLeaf {
     }
 
     @Override
-    public OpList eval() {
-        return PiFunctions.NT(name);
+    public OpList eval(ParsingEnv env) {
+
+        RuleStmnt rule = (RuleStmnt) env.getTreeRoot().getChildren().stream()
+                .filter(r -> ((RuleStmnt) r).getName().equals(name)).findFirst().get();
+
+        return PiFunctions.NT(rule.getName());
     }
 
     @Override
@@ -106,7 +110,7 @@ class EmptyStmnt extends ASTLeaf {
     }
 
     @Override
-    public OpList eval() {
+    public OpList eval(ParsingEnv env) {
         return new OpList(); // 空
     }
 
@@ -123,13 +127,13 @@ class DotStmnt extends ASTLeaf {
     }
 
     @Override
-    public OpList eval() {
+    public OpList eval(ParsingEnv env) {
         return PiFunctions.Any();
     }
 
     @Override
     public String toString() {
         // TODO Auto-generated method stub
-        return ".";
+        return "DOT";
     }
 }

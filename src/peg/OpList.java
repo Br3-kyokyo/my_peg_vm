@@ -12,7 +12,7 @@ public class OpList {
 
     private ArrayList<Byte> list = new ArrayList<Byte>();
 
-    static HashMap<String, Integer> NTaddressMap = new HashMap<String, Integer>(); // NTの開始アドレス
+    public HashMap<String, Integer> NTaddressMap = new HashMap<String, Integer>(); // NTの開始アドレス
     HashMap<Integer, String> NTtempOpcodeMap = new HashMap<Integer, String>(); // (アドレス番地, 参照したいNTの名前)
 
     public boolean addOpcode(byte b) {
@@ -43,10 +43,14 @@ public class OpList {
         return list.addAll(bytelist);
     }
 
-    public boolean addOpblock(OpList bList) {
+    public boolean addOpblock(OpList added) {
+
+        // 非終端記号開始位置の番地情報を揃える
+        for (var ntaddrmap : added.NTaddressMap.entrySet())
+            this.NTaddressMap.put(ntaddrmap.getKey(), ntaddrmap.getValue() + this.list.size());
 
         // 非終端記号呼び出しの番地情報を揃える
-        for (var addrntmap : bList.NTtempOpcodeMap.entrySet())
+        for (var addrntmap : added.NTtempOpcodeMap.entrySet())
             this.NTtempOpcodeMap.put(this.list.size() + addrntmap.getKey(), addrntmap.getValue());
 
         // blist: 0 1 2 3
@@ -57,7 +61,7 @@ public class OpList {
         // 8+2 = 10
         // 0 1 2 3 4 5 6 7 0 1 2 3
 
-        return list.addAll(bList.list);
+        return list.addAll(added.list);
     }
 
     public int size() {
@@ -144,9 +148,5 @@ public class OpList {
         int operand = ((list.get(i + 3) & mask) << 24) | ((list.get(i + 2) & mask) << 16)
                 | ((list.get(i + 1) & mask) << 8) | (list.get(i) & mask);
         return operand;
-    }
-
-    public HashMap<String, Integer> getNTaddressMap() {
-        return OpList.NTaddressMap;
     }
 }
