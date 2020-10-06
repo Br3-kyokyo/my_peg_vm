@@ -81,6 +81,27 @@ public class OpList {
         return bytes;
     }
 
+    public void replaceTmpOperand() {
+        for (var addrntmap : this.NTtempOpcodeMap.entrySet()) {
+            var replaceTargetAddr = addrntmap.getKey();
+            var nt = addrntmap.getValue();
+
+            // 仮で埋めていたバイト列を削除
+            for (int i = 0; i < Integer.BYTES; i++)
+                this.remove(replaceTargetAddr);
+
+            // 当該アドレスを埋める
+            try {
+                int offset = this.NTaddressMap.get(nt) - (replaceTargetAddr + 4);
+                this.addOperand(replaceTargetAddr, offset);
+            } catch (NullPointerException e) {
+                System.out.println("存在しない非終端記号を参照しています。:" + nt);
+                e.printStackTrace();
+                System.exit(-1);
+            }
+        }
+    }
+
     // バイト列を文字列に変換
     public String toString() {
         StringBuilder sb = new StringBuilder();

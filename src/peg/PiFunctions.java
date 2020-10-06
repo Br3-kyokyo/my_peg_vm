@@ -128,32 +128,6 @@ public class PiFunctions {
         return list;
     }
 
-    public static OpList ReplaceCallNtAddr(OpList oplist) {
-        for (var addrntmap : oplist.NTtempOpcodeMap.entrySet()) {
-            var replaceTargetAddr = addrntmap.getKey();
-            var nt = addrntmap.getValue();
-
-            // 仮で埋めていたバイト列を削除
-            for (int i = 0; i < Integer.BYTES; i++)
-                oplist.remove(replaceTargetAddr);
-
-            // 当該アドレスを埋める
-            try {
-                int offset = oplist.NTaddressMap.get(nt) - (replaceTargetAddr + 4);
-                oplist.addOperand(replaceTargetAddr, offset);
-            } catch (NullPointerException e) {
-                System.out.println("存在しない非終端記号を参照しています。:" + nt);
-                e.printStackTrace();
-                System.exit(-1);
-            }
-        }
-
-        // 0 1 2 3 4 5 6 7
-        // c t
-
-        return oplist;
-    }
-
     private static OpList LogOp(String log) {
         var list = new OpList();
 

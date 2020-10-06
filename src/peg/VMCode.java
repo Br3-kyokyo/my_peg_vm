@@ -4,26 +4,27 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class VMCodeGenerator {
+public class VMCode {
 
     private int ip; // input position - 行における位置
     private int lp; // line position - 現在の行番号
     private String line;
     private List<String> input;
+    private boolean packrat;
 
-    public VMCodeGenerator(List<String> input) {
+    private OpList bodycode;
+
+    public VMCode(List<String> input, boolean packratparsing) {
         this.input = input;
-    }
-
-    public OpList generate(boolean packratparsing) {
+        this.packrat = packratparsing;
 
         try {
             ASTree tree = Grammer();
-            OpList oplist = tree.eval(new ParsingEnv(tree, packratparsing));
+            OpList oplist = tree.eval(new ParsingEnv(tree, packrat));
 
             System.out.println(tree.toString());
 
-            return oplist;
+            this.bodycode = oplist;
         } catch (SyntaxError e) {
             System.out.println(lp + 1 + ":" + ip + ": SyntaxError");
             System.out.println(input.get(lp));
@@ -39,8 +40,22 @@ public class VMCodeGenerator {
             e.printStackTrace();
             System.exit(-1);
         }
+    }
 
-        return null; // unreachable (なはず…)
+    public OpList body() {
+        return bodycode; // unreachable (なはず…)
+    }
+
+    public OpList header() {
+        OpList header = new OpList();
+        if (packrat) {
+            header.addOpcode((byte) 0x01);
+            header.addOperand(bodycode.NTaddressMap.size());
+        } else {
+            header.addOpcode((byte) 0x00);
+        }
+
+        return header;
     }
 
     private ASTree Grammer() throws SyntaxError {

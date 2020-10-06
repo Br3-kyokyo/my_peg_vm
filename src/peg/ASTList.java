@@ -34,7 +34,8 @@ class GrammerStmnt extends ASTList {
         for (ASTree tree : getChildren())
             oplist.addOpblock(tree.eval(env));
 
-        oplist = PiFunctions.ReplaceCallNtAddr(oplist);
+        // 仮の非終端記号アドレスへのオフセットオペランドを実際の値で埋める
+        oplist.replaceTmpOperand();
         return oplist;
     }
 
