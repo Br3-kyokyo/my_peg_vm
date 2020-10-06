@@ -5,7 +5,7 @@ import java.util.List;
 
 import consts.Opcode;
 
-public abstract class ASTList extends ASTree {
+public abstract class ASTList implements ASTree {
     private List<ASTree> children;
 
     public ASTList(List<ASTree> children) {

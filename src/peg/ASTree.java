@@ -1,6 +1,6 @@
 package peg;
 
-public abstract class ASTree {
+public interface ASTree {
 
     public abstract OpList eval(ParsingEnv parsingEnv) throws RuntimeException;
 

@@ -3,7 +3,7 @@ package peg;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class ASTLeaf extends ASTree {
+public interface ASTLeaf extends ASTree {
 
 }
 
